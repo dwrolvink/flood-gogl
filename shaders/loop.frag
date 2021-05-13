@@ -3,7 +3,7 @@ out vec4 FragColor;
 in vec2 TexCoord;
 
 
-uniform sampler2D texture1;
+uniform sampler2D PF_texture;
 uniform float window_width;
 uniform float window_height;
 
@@ -11,7 +11,7 @@ uniform float window_height;
 vec4 getTextureValue(float dx, float dy) {
     // get new coords
     return texture(
-        texture1, 
+        PF_texture, 
         vec2(
             (TexCoord.s + (dx / window_width)), 
             (TexCoord.t + (dy / window_height))

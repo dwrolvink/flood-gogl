@@ -21,100 +21,55 @@ import (
 const (
 	Width  = 500 // Width of the main window
 	Height = 500 // Height of the main window
+
+	RECORDING_GIF   = 0
+	RECORDING_PRTSC = 1
 )
 
 var (
-	WindowTitle = "Test GL Application"
+	WindowTitle                   = "Test GL Application"
+	tick           float32        = -1.0                               // ticks up every game loop cycle
+	delay_ms       int64          = 5                                  // handles frame rate
+	record         bool           = false                              // whether to record the screen.
+	record_length  float32        = float32(1.0 * (1000.0 / delay_ms)) // After how many ticks to stop recording (and close the program)
+	previous_frame *image.NRGBA                                        // intermediate storage for front buffer pixels
+	PF_textureID   gogl.TextureID                                      // previous frame, the backbuffer gets bound to this texture after every draw.
 
-	x        float32 = 0.0  // used to move the sprites around
-	dir_x    float32 = 1    // used to change x
-	tick     float32 = -1.0 // ticks up every game loop cycle
-	delay_ms int64   = 20   // handles frame rate
-
-	DrawMode      string  = "composite"                        // chooses whether to draw one dataset, or all of them ("composite" vs "single_set")
-	ChosenDataset int     = 0                                  // Used only when DrawMode = "single_dataset"
-	record        bool    = false                              // whether to record the screen.
-	record_length float32 = float32(1.0 * (1000.0 / delay_ms)) // After how many ticks to stop recording (and close the program)
-
-	// The texture that we can write to.
-	PF_textureID gogl.TextureID
-	//testTex      gogl.TextureID
+	// actions
+	action_reset = false
+	action_prtsc = false
 )
 
 func main() {
 	// Init Window, OpenGL, and Data, get user input from commandline
-	// -----------------------------------------------------------
 	window := gogl.Init(WindowTitle, Width, Height)
-	data, datalist := SetData()
-	_ = datalist
-
+	data := SetData()
+	SetKeyHandling(window)
 	ParseCommandlineArgs()
 
-	// spike bind front buffer
-	// -----------------------
-	// make home for the pixel data to be read after swap buffer
-
-	upLeft := image.Point{0, 0}
-	lowRight := image.Point{Width, Height}
-	previous_frame := image.NewNRGBA(image.Rectangle{upLeft, lowRight})
-
+	// Make an image to read the pixel data of the front buffer into
+	// (I don't yet know how to put this directly into the texture)
+	previous_frame = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
 	PF_textureID = gogl.GenTexture()
-
-	//testTex = gogl.LoadImageToTexture("assets/img/texture.png")
 
 	// Main loop
 	// ===========================================================
-	for !window.ShouldClose() && (!record || tick < record_length) {
+	for !window.ShouldClose() {
 
 		// Update game
-		// ------------------------------------------------------
-		// Naive way to manage FPS. See also bottom of this loop.
+		// ---------------------
 		start := time.Now()
-
-		// Increment global clock
 		tick += 1.0
 
-		// x is used temporarily to move stuff around, will be removed when
-		// there are actors with volition
-		x += 0.01 * dir_x
-		if x > 1.0 || x < -1.0 {
-			dir_x *= -1.0
-		}
-
-		// Update DataObjects
-		for i := range datalist {
-			datalist[i].Update()
-		}
-
 		// Draw to screen
-		// ------------------------------------------------------
-		// Clear screen
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		// ---------------------
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // Clear screen
+		DrawDataset(data)                                   // Draw new frame
+		window.SwapBuffers()                                // Put buffer that we painted on on the foreground
 
-		// Draw new frame
-		DrawDataset(data)
-
-		// Put buffer that we painted on on the foreground
-		window.SwapBuffers()
-
-		// spike bind front buffer
-		// -----------------------
-
-		// update front buffer texture
-		gogl.BindTexture(PF_textureID)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-		// Bind front buffer to previous_frame
-		gl.ReadBuffer(gl.FRONT)
-		gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(previous_frame.Pix))
-
-		previous_frame.Pix[0+4*Width*200] = 255.0
-		previous_frame.Pix[3+4*Width*200] = 255.0
-
-		// Bind to texture ID
-		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(Width), int32(Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(previous_frame.Pix))
+		// Load current frontbuffer into texture for next round
+		// ----------------------------------------------------
+		UpdateFrontBufferTexture()
 
 		// Event handling
 		// ------------------------------------------------------
@@ -130,9 +85,9 @@ func main() {
 
 		// Record output
 		// ------------------------------------------------------
-		if record {
-			CreateImage(int(tick))
-			fmt.Println(tick)
+		if action_prtsc {
+			CreateImage(int(tick), RECORDING_PRTSC)
+			action_prtsc = false
 		}
 
 		// FPS management
@@ -155,8 +110,65 @@ func main() {
 	defer glfw.Terminate()
 }
 
+func SetKeyHandling(window *glfw.Window) {
+	window.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		// Get key as defined by the locale (qwerty, dvorak, etc)
+		char := glfw.GetKeyName(key, scancode)
+		// Alias for readability
+		Down := glfw.Press
+		Up := glfw.Release
+		_ = Up
+
+		// Handle keystrokes
+		switch char {
+		case "e":
+			if action == Down {
+				action_reset = true
+			}
+		case "p":
+			if action == Down {
+				action_prtsc = true
+			}
+		}
+	})
+}
+
+// Used to reset the FP_texture to initial conditions
+func ResetFrame(img *image.NRGBA) {
+	pixels, _ := gogl.LoadPixelDataFromImage("assets/img/start.png")
+
+	for i := 0; i < len(img.Pix) && i < len(*pixels); i++ {
+		img.Pix[i] = (*pixels)[i]
+	}
+}
+
+func ReadFrontBuffer() {
+	// Get pixels from front buffer, and put them in previous_frame
+	gl.ReadBuffer(gl.FRONT)
+	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(previous_frame.Pix))
+}
+
+func UpdateFrontBufferTexture() {
+	// Either reset image, or load image data from frontbuffer
+	if action_reset || tick == 1 {
+		ResetFrame(previous_frame)
+		action_reset = false
+	} else {
+		ReadFrontBuffer()
+	}
+
+	// Bind texture
+	gogl.BindTexture(PF_textureID)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+	// Write image data to the PF_texture
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(Width), int32(Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(previous_frame.Pix))
+}
+
 // Define the DataObjects that contain our Programs, Shaders, Sprites, etc
-func SetData() (gogl.DataObject, []gogl.DataObject) {
+func SetData() gogl.DataObject {
 	/*
 		   Multiple datasets can be defined.
 		   Each set contains all that it needs to draw to the screen,
@@ -192,7 +204,7 @@ func SetData() (gogl.DataObject, []gogl.DataObject) {
 	// -----------------------------------------------------------
 	data := datalist[0]
 
-	return data, datalist
+	return data
 }
 
 // DRAWING
@@ -273,33 +285,6 @@ func ParseCommandlineArgs() {
 				}
 			}
 		}
-
-		// DrawMode & ChosenDataset
-		// -----------------------------------------------------------
-		// Apply commandline choice for dataset
-
-		if os.Args[i] == "--set" {
-			if i+1 < len(os.Args) {
-
-				// Print both datasets on top of eachother
-				if os.Args[i+1] == "c" {
-					DrawMode = "composite"
-					continue
-				}
-
-				// Print only one dataset
-				DrawMode = "single_set"
-				choice, err := strconv.Atoi(os.Args[i+1])
-				if err != nil {
-					fmt.Println("ERROR: Dataset index not passed in. E.g. '-s 1'. Ignoring.")
-					continue
-				}
-				ChosenDataset = choice
-
-			} else {
-				fmt.Println("ERROR: Dataset index not passed in. E.g. '-s 1'. Ignoring.")
-			}
-		}
 	}
 }
 
@@ -338,23 +323,35 @@ func InitRecording() {
 }
 
 // Reads out the pixel data in gl.FRONT, and saves it to recording/temp/image<Tick>.png
-func CreateImage(number int) {
+func CreateImage(number int, mode int) {
 	filename := fmt.Sprintf("image%03d.png", number)
 	width := Width
 	height := Height
 
-	upLeft := image.Point{0, 0}
-	lowRight := image.Point{width, height}
+	var folder string
+	if mode == RECORDING_PRTSC {
+		folder = "recording/printscreens/"
 
-	img := image.NewNRGBA(image.Rectangle{upLeft, lowRight})
+		currentTime := time.Now()
+		filename = currentTime.Format("2006-01-02 15:04:05.000000") + ".png"
+	} else {
+		folder = "recording/temp/"
+	}
+
+	img := image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{width, height}})
 
 	gl.ReadBuffer(gl.FRONT)
 	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(img.Pix))
 	img = imaging.FlipV(img)
 
 	// Encode as PNG.
-	f, _ := os.Create("recording/temp/" + filename)
+	f, _ := os.Create(folder + filename)
 	png.Encode(f, img)
+
+	if mode == RECORDING_PRTSC {
+		fmt.Println("Created " + folder + filename)
+	}
+
 }
 
 // Takes all the frame images in recording/temp and makes a palletted gif out of it using ffmpeg.
