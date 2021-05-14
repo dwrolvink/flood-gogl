@@ -1,4 +1,4 @@
-go_gl
+Flood-gogl
 ====================
 This is an example app for the [go-gl wrapper package](https://github.com/dwrolvink/gogl/tree/main) that I'm writing as an exercise.
 
@@ -18,7 +18,6 @@ Support
 I have built this package on linux with go 1.16, it's not guaranteed to work on any other system, but it probably will. Let me know if you have troubles.
 - Recording will not work on non linux systems as of yet!
 - Recording requires ffmpeg to be installed.
-
 
 
 
