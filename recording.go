@@ -26,13 +26,17 @@ const (
 func InitRecording() {
 	err := os.Mkdir("recording/temp/", 0755)
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 }
 
 // Reads out the pixel data in gl.FRONT, and saves it to recording/temp/image<Tick>.png when mode == RECORDING_GIF
 // When mode == RECORDING_PRTSC, the save location is "recording/printscreens/<datetime>.png
 func CreateImage(number int, mode int) {
+	if mode == RECORDING_GIF {
+		fmt.Println("Recording frame", tick, "of", record_length)
+	}
+
 	filename := fmt.Sprintf("image%03d.png", number)
 	width := Width
 	height := Height
@@ -53,6 +57,23 @@ func CreateImage(number int, mode int) {
 	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(img.Pix))
 	img = imaging.FlipV(img)
 
+	// Make bacground black (starting texture has an alpha layer)
+	w := img.Bounds().Max.X
+	h := img.Bounds().Max.Y
+	byteIndex := 0
+	for y := h - 1; y >= 0; y-- {
+		for x := 0; x < w; x++ {
+			//pixels[byteIndex] = byte(r / 256)
+			byteIndex++
+			//pixels[byteIndex] = byte(g / 256)
+			byteIndex++
+			//pixels[byteIndex] = byte(b / 256)
+			byteIndex++
+			img.Pix[byteIndex] = byte(255)
+			byteIndex++
+		}
+	}
+
 	// Encode as PNG.
 	f, _ := os.Create(folder + filename)
 	png.Encode(f, img)
@@ -67,9 +88,13 @@ func CreateImage(number int, mode int) {
 func CompileGif() {
 	filename := time.Now().Unix()
 
+	fmt.Println("Compiling gif, don't close the window.")
+
 	cmd, err := exec.Command("/bin/sh", "scripts/make_gif.sh", fmt.Sprint(filename)).Output()
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}
 	fmt.Println(cmd)
+
+	fmt.Println("Compilation done.")
 }

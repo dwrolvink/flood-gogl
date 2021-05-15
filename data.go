@@ -13,15 +13,15 @@ import (
 */
 
 // Define the DataObjects that contain our Programs, Shaders, Sprites, etc
-func SetData() gogl.DataObject {
+func SetData() []gogl.DataObject {
 
 	// List of datasets
-	datalist := make([]gogl.DataObject, 2)
+	datalist := make([]gogl.DataObject, 3)
 
 	// Fist dataset: Vertex type: Quad, uses Sprites
 	// -----------------------------------------------------------
 	datalist[0] = gogl.DataObject{
-		ProgramName: "FrontBufferLoop",
+		ProgramName: "Game",
 		Type:        gogl.GOGL_QUADS,
 		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
 		Indices: []uint32{
@@ -29,14 +29,36 @@ func SetData() gogl.DataObject {
 			0, 2, 3, // triangle 2
 		},
 		VertexShaderSource:   "shaders/quad.vert",
-		FragmentShaderSource: "shaders/loop.frag",
+		FragmentShaderSource: "shaders/game.frag",
 	}
 
-	datalist[0].ProcessData()
+	datalist[1] = gogl.DataObject{
+		ProgramName: "Smell",
+		Type:        gogl.GOGL_QUADS,
+		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
+		Indices: []uint32{
+			1, 0, 3, // triangle 1
+			0, 2, 3, // triangle 2
+		},
+		VertexShaderSource:   "shaders/quad.vert",
+		FragmentShaderSource: "shaders/smell.frag",
+	}
 
-	// Pick one or the other data set
-	// -----------------------------------------------------------
-	data := datalist[0]
+	datalist[2] = gogl.DataObject{
+		ProgramName: "BlitGameState",
+		Type:        gogl.GOGL_QUADS,
+		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
+		Indices: []uint32{
+			1, 0, 3, // triangle 1
+			0, 2, 3, // triangle 2
+		},
+		VertexShaderSource:   "shaders/quad.vert",
+		FragmentShaderSource: "shaders/blit_game.frag",
+	}
 
-	return data
+	for i := 0; i < len(datalist); i++ {
+		datalist[i].ProcessData()
+	}
+
+	return datalist
 }

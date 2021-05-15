@@ -20,11 +20,11 @@ vec4 getTextureValue(float dx, float dy) {
 }
 
 void main() {
-    vec4 texleft = getTextureValue(-2.5, -1.0);
+    vec4 texleft = getTextureValue(-0.0, -1.0);
     vec4 tex = getTextureValue(0., 0.);
 
     if (texleft.r >= 0.1){
-        FragColor = vec4((texleft.r + tex.r)/2.0 + 0.01, texleft.g, texleft.b, texleft.a);
+        FragColor = vec4(max(texleft.r, tex.r), min(texleft.g, tex.g), min(texleft.b, tex.b), 1.0);
     }
     else {
         FragColor = getTextureValue(0., 0.);
