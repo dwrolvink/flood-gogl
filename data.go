@@ -16,44 +16,55 @@ import (
 func SetData() []gogl.DataObject {
 
 	// List of datasets
-	datalist := make([]gogl.DataObject, 3)
+	datalist := make([]gogl.DataObject, 4)
 
-	// Fist dataset: Vertex type: Quad, uses Sprites
-	// -----------------------------------------------------------
+	// Defaults
+	var vertex_type = gogl.GOGL_QUADS
+	var verts = CreateQuadVertexMatrix(1.0, 0.0, 0.0)
+	var vShader = "shaders/quad.vert"
+	var indices = []uint32{
+		1, 0, 3, // triangle 1
+		0, 2, 3, // triangle 2
+	}
+
+	// Game state
 	datalist[0] = gogl.DataObject{
-		ProgramName: "Game",
-		Type:        gogl.GOGL_QUADS,
-		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
-		Indices: []uint32{
-			1, 0, 3, // triangle 1
-			0, 2, 3, // triangle 2
-		},
-		VertexShaderSource:   "shaders/quad.vert",
+		ProgramName:          "Game",
+		Type:                 vertex_type,
+		Vertices:             verts,
+		Indices:              indices,
+		VertexShaderSource:   vShader,
 		FragmentShaderSource: "shaders/game.frag",
 	}
 
+	// Smell red (blurred version of gamestate)
 	datalist[1] = gogl.DataObject{
-		ProgramName: "Smell",
-		Type:        gogl.GOGL_QUADS,
-		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
-		Indices: []uint32{
-			1, 0, 3, // triangle 1
-			0, 2, 3, // triangle 2
-		},
-		VertexShaderSource:   "shaders/quad.vert",
-		FragmentShaderSource: "shaders/smell.frag",
+		ProgramName:          "Smell Red",
+		Type:                 vertex_type,
+		Vertices:             verts,
+		Indices:              indices,
+		VertexShaderSource:   vShader,
+		FragmentShaderSource: "shaders/smell_red.frag",
 	}
 
+	// Smell green (blurred version of gamestate)
 	datalist[2] = gogl.DataObject{
-		ProgramName: "BlitGameState",
-		Type:        gogl.GOGL_QUADS,
-		Vertices:    CreateQuadVertexMatrix(1.0, 0.0, 0.0),
-		Indices: []uint32{
-			1, 0, 3, // triangle 1
-			0, 2, 3, // triangle 2
-		},
-		VertexShaderSource:   "shaders/quad.vert",
-		FragmentShaderSource: "shaders/blit_game.frag",
+		ProgramName:          "Smell Green",
+		Type:                 vertex_type,
+		Vertices:             verts,
+		Indices:              indices,
+		VertexShaderSource:   vShader,
+		FragmentShaderSource: "shaders/smell_green.frag",
+	}
+
+	// Mix. Can be used to do advanced merging of textures
+	datalist[3] = gogl.DataObject{
+		ProgramName:          "Mix",
+		Type:                 vertex_type,
+		Vertices:             verts,
+		Indices:              indices,
+		VertexShaderSource:   vShader,
+		FragmentShaderSource: "shaders/mix.frag",
 	}
 
 	for i := 0; i < len(datalist); i++ {

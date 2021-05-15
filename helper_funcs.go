@@ -22,3 +22,13 @@ func CreateQuadVertexMatrix(size float32, x_offset float32, y_offset float32) []
 
 	return vertices
 }
+
+// Tests if int element is in slice
+func contains_si(slice []int, element int) bool {
+	for _, val := range slice {
+		if val == element {
+			return true
+		}
+	}
+	return false
+}

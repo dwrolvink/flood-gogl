@@ -10,27 +10,87 @@ import (
 
 func SetKeyHandling(window *glfw.Window) {
 	window.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-		// Get key as defined by the locale (qwerty, dvorak, etc)
-		char := glfw.GetKeyName(key, scancode)
 		// Alias for readability
 		Down := glfw.Press
 		Up := glfw.Release
+		Repeat := glfw.Repeat
 		_ = Up
+
+		// Get key as defined by the locale (qwerty, dvorak, etc)
+		char := glfw.GetKeyName(key, scancode)
+		if char == "" {
+			char = fmt.Sprint(scancode)
+		}
 
 		// Handle keystrokes
 		switch char {
-		case "e":
-			if action == Down {
+		case "65": // space
+			if action == Down || action == Repeat {
 				ActionReset = true
+			}
+		case "116": // arrow down
+			if action == Down || action == Repeat {
+				ActionDrawA -= 0.1
+				if ActionDrawA < 0.0 {
+					ActionDrawA = 0.0
+				}
+			}
+		case "111": // arrow up
+			if action == Down || action == Repeat {
+				ActionDrawA += 0.1
+				if ActionDrawA > 1.0 {
+					ActionDrawA = 1.0
+				}
 			}
 		case "p":
 			if action == Down {
 				ActionPrtsc = true
 			}
 		case "s":
-			if action == Down {
+			if action == Down || action == Repeat {
 				ActionPrintSmell = !ActionPrintSmell
 			}
+		case "g":
+			if action == Down || action == Repeat {
+				ActionPrintGame = !ActionPrintGame
+			}
+		case "0":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "1":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "2":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "3":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "4":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "5":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "6":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "7":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "8":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+		case "9":
+			digit, _ := strconv.Atoi(char)
+			ActionDrawMode = int32(digit)
+
+		default:
+			// get keychars if key is repeated and not matched
+			if action == Repeat {
+				fmt.Println("action, char, key, scancode:", action, char, key, scancode)
+			}
+
 		}
 
 	})
