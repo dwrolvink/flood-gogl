@@ -2,7 +2,9 @@ package main
 
 import (
 	//"fmt"
+
 	"log"
+
 	//"os"
 	//"strconv"
 	"time"
@@ -17,12 +19,14 @@ import (
 const (
 	Width  = 480 // Width of the main window
 	Height = 480 // Height of the main window
+
+	GL_DEFAULT_FBO = 0
 )
 
 var (
 	WindowTitle           = "Test GL Application"
-	tick          float32 = -1.0                                 // ticks up every game loop cycle
-	delay_ms      int64   = 30                                   // handles frame rate
+	tick          float32 = 0.0                                  // ticks up every game loop cycle
+	delay_ms      int64   = 5                                    // handles frame rate
 	record        bool    = false                                // whether to record the screen.
 	record_length float32 = float32(1.0*(1000.0/delay_ms)) * 0.5 // After how many ticks to stop recording (and close the program)
 
@@ -49,35 +53,14 @@ func main() {
 
 	// Make an image to read the pixel data of the front buffer into
 	// (I don't yet know how to put this directly into the texture)
-	PfGameImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
-	PfSmellImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
-	PfGameTextureID = gogl.GenTexture()
-	PfSmellTextureID = gogl.GenTexture()
+	//PfGameImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
+	//PfSmellImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
+	PfGameTextureID = NewDefaultTexture()
+	PfSmellTextureID = NewDefaultTexture()
 
-	// draw target for smell
-	// ---------------------
-
-	// generate a framebuffer
-	gl.GenFramebuffers(1, &FrameBuffer1)
-
-	// Load textures
-	ResetFrame(PfGameTextureID, PfGameImg, "assets/img/texture.png", 0)
-	ResetFrame(PfSmellTextureID, PfSmellImg, "assets/img/texture.png", 1)
-
-	// attach texture to fbo
-	gl.BindFramebuffer(gl.DRAW_FRAMEBUFFER, FrameBuffer1)
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, uint32(PfSmellTextureID), 0)
-
-	// check state of framebuffer
-	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
-		panic("framebuffer not complete!")
-	}
-
-	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-
-	//gl.FramebufferParameteri(gl.DRAW_FRAMEBUFFER, gl.FRAMEBUFFER_DEFAULT_WIDTH, Width);
-	//gl.FramebufferParameteri(gl.DRAW_FRAMEBUFFER, gl.FRAMEBUFFER_DEFAULT_HEIGHT, Height);
-	//gl.FramebufferParameteri(gl.DRAW_FRAMEBUFFER, gl.FRAMEBUFFER_DEFAULT_SAMPLES, 4);
+	// Create render target for when smell is not outputted to the screen
+	ResetFrame(PfSmellTextureID, "assets/img/texture.png") // texture needs to be initialized before linking to FBO
+	CreateFramebuffer(&FrameBuffer1, PfSmellTextureID)
 
 	// Main loop
 	// ===========================================================
@@ -88,9 +71,9 @@ func main() {
 		start := time.Now()
 		tick += 1.0
 
-		if ActionReset {
-			ResetFrame(PfGameTextureID, PfGameImg, "assets/img/texture.png", 0)
-			ResetFrame(PfSmellTextureID, PfSmellImg, "assets/img/texture.png", 1)
+		if ActionReset || tick == 1.0 {
+			ResetFrame(PfGameTextureID, "assets/img/texture.png")
+			ResetFrame(PfSmellTextureID, "assets/img/texture.png")
 			ActionReset = false
 		}
 
@@ -173,13 +156,15 @@ func DrawDataset(datalist []gogl.DataObject) {
 	gl.BlendFunc(gl.ONE, gl.ZERO)
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
-	TakeBufferSnapshot(gl.BACK, PfGameTextureID, PfGameImg, 0) // overwrites PfGameTexture
+	// Save game state as input for the next iteration
+	TakeBufferSnapshot(GL_DEFAULT_FBO, PfGameTextureID)
 
 	// Calc smell
 	// =======================================================
 
-	// bind it as the target for rendering commands
-	//gl.BindFramebuffer(gl.DRAW_FRAMEBUFFER, FrameBuffer1)
+	if ActionPrintSmell == false {
+		gl.BindFramebuffer(gl.FRAMEBUFFER, FrameBuffer1)
+	}
 
 	data = datalist[1]
 	data.Enable()
@@ -202,38 +187,18 @@ func DrawDataset(datalist []gogl.DataObject) {
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
-	TakeBufferSnapshot(gl.BACK, PfSmellTextureID, PfSmellImg, 1)
-
-	// Overwrite backbuffer with gamestate
-	// =============================================================
-
 	if ActionPrintSmell == false {
-		// Enable program, VAO, etc
-		data := datalist[2]
-		data.Enable()
-
-		// Set uniforms
-		data.Program.SetFloat("window_width", float32(Width))
-		data.Program.SetFloat("window_height", float32(Height))
-
-		// Bind textures
-		data.Program.SetInt("PfGameTexture", int32(0))
-		data.Program.SetInt("PfSmellTexture", int32(1))
-		gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
-		gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
-
-		gl.ActiveTexture(gl.TEXTURE0 + 1)                       // Smell (blurred composite of game state)
-		gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellTextureID)) //
-
-		// Draw Game state
-		gl.Enable(gl.BLEND)
-		gl.BlendFunc(gl.ONE, gl.ZERO)
-		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+		// Set the draw target back to default so as not to confuse ourselves
+		gl.BindFramebuffer(gl.FRAMEBUFFER, GL_DEFAULT_FBO)
+	} else {
+		// We drew to the default FBO, so the output is not in PfSmellTextureID. We need to do this manually.
+		// When we draw to the smell FBO, the smell texture is bound there, and we can skip this step.
+		TakeBufferSnapshot(GL_DEFAULT_FBO, PfSmellTextureID)
 	}
 
 	// =========================================================
 
-	// Put buffer that we painted on on the foreground
+	// Put buffer that we painted on (gl.BACK) on the foreground.
 	window.SwapBuffers()
 
 }
