@@ -53,8 +53,6 @@ func main() {
 
 	// Make an image to read the pixel data of the front buffer into
 	// (I don't yet know how to put this directly into the texture)
-	//PfGameImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
-	//PfSmellImg = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{Width, Height}})
 	PfGameTextureID = NewDefaultTexture()
 	PfSmellTextureID = NewDefaultTexture()
 
@@ -63,11 +61,9 @@ func main() {
 	CreateFramebuffer(&FrameBuffer1, PfSmellTextureID)
 
 	// Main loop
-	// ===========================================================
 	for !window.ShouldClose() {
 
-		// Update game
-		// ---------------------
+		// Housekeeping
 		start := time.Now()
 		tick += 1.0
 
@@ -77,29 +73,28 @@ func main() {
 			ActionReset = false
 		}
 
-		// Draw to screen
-		// ---------------------
-		DrawDataset(datalist) // Draw new frame
+		// Draw to screen / update gamestate
+		DrawDataset(datalist)
 
-		// Event handling
-		// ------------------------------------------------------
 		// Handle window events
 		glfw.PollEvents()
 
 		// Check if shaders need to be recompiled
 		gogl.HotloadShaders()
 
+		// Sanity check
 		if err := gl.GetError(); err != 0 {
 			log.Println(err)
 		}
 
 		// Record output
-		// ------------------------------------------------------
 		if ActionPrtsc {
+			// Printscreens
 			CreateImage(int(tick), RECORDING_PRTSC)
 			ActionPrtsc = false
 		}
 		if ActionRecord {
+			// Gif recording
 			CreateImage(int(tick), RECORDING_GIF)
 			if tick > record_length {
 				ActionRecord = false
@@ -107,12 +102,8 @@ func main() {
 			}
 		}
 
-		// FPS management
-		// ------------------------------------------------------
 		// Sleep for a bit if the loop finished too quickly.
-		// A better way would be to update actor positions based on
-		// elapsed time, but the neccessary code isn't present yet for
-		// that (i.e. volition).
+		// Note that this does nothing for if a loop takes too long.
 		elapsed := time.Since(start)
 		dif_ms := delay_ms - elapsed.Milliseconds()
 		time.Sleep(time.Duration(dif_ms * int64(time.Millisecond)))
@@ -122,10 +113,6 @@ func main() {
 	defer glfw.Terminate()
 }
 
-// DRAWING
-// ----------------------------------------------------------------------
-
-// Draw a single dataset.
 func DrawDataset(datalist []gogl.DataObject) {
 
 	// Clear screen

@@ -59,7 +59,7 @@ go get github.com/dwrolvink/gogl
 Run
 ====================
 ```bash
-go run ./main.go 
+go run ./*.go 
 ```
 
 Build
@@ -74,13 +74,6 @@ go build -v
 
 Args
 ====================
---set
--------------------
-Choose different dataset (e.g. triangles instead of pepe). Valid values: c, 0, 1, (and further if you add more datasets).
-"c" is the default, and this is a custom composite drawmode that uses both dataset 0 and 1.
-```bash
-go run ./main.go --set 1
-```
 
 --record
 -------------------
@@ -89,25 +82,25 @@ Record gif to `record/output/`. Default length is 1 second (50 ticks @ 20ms per 
 > Recording requires ffmpeg to be installed.
 
 ```bash
-go run ./main.go --record
+go run ./*.go --record
 ```
 
 Record gif to `record/output/`. Change length to 2 seconds.
 ```bash
-go run ./main.go --record 2
+go run ./*.go --record 2
 ```
 
 --fps
 -------------------
 Change the speed. Note that fps of 50 is the max that will work with gifs.
 ```bash
-go run ./main.go --fps 20
+go run ./*.go --fps 20
 ```
 
 Combinations allowed:
 -------------------
 ```bash
-go run ./main.go --record 2 --set 1 --fps 30
+go run ./*.go --record 2 --set 1 --fps 30
 ```
 
 Dev Notes
