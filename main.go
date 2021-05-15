@@ -26,12 +26,13 @@ const (
 	DRAW_MODE_MERGE = 2 // uniformf A is used as mix, 0=game, 1=smell
 	DRAW_MODE_SMELL = 3 // uniformf A is used as mix, 0=red, 0.5=both, 1.0=green
 
+	StartImageSrc = "assets/img/text2.png"
 )
 
 var (
 	WindowTitle           = "Test GL Application"
 	tick          float32 = 0.0                                  // ticks up every game loop cycle
-	delay_ms      int64   = 5                                    // handles frame rate
+	delay_ms      int64   = 20                                   // handles frame rate
 	record        bool    = false                                // whether to record the screen.
 	record_length float32 = float32(1.0*(1000.0/delay_ms)) * 0.5 // After how many ticks to stop recording (and close the program)
 
@@ -74,15 +75,15 @@ func main() {
 	PfSmellGreenTextureID = NewDefaultTexture()
 
 	//Create render target for when gamestate is not outputted to the screen
-	ResetFrame(PfGameTextureID, "assets/img/texture.png") // texture needs to be initialized before linking to FBO
+	ResetFrame(PfGameTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGame, PfGameTextureID)
 
 	// Home for red smell
-	ResetFrame(PfSmellRedTextureID, "assets/img/texture.png") // texture needs to be initialized before linking to FBO
+	ResetFrame(PfSmellRedTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellRed, PfSmellRedTextureID)
 
 	// Home for green smell
-	ResetFrame(PfSmellGreenTextureID, "assets/img/texture.png") // texture needs to be initialized before linking to FBO
+	ResetFrame(PfSmellGreenTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellGreen, PfSmellGreenTextureID)
 
 	// Main loop
@@ -93,8 +94,9 @@ func main() {
 		tick += 1.0
 
 		if ActionReset || tick == 1.0 {
-			ResetFrame(PfGameTextureID, "assets/img/texture.png")
-			ResetFrame(PfSmellRedTextureID, "assets/img/texture.png")
+			ResetFrame(PfGameTextureID, StartImageSrc)
+			ResetFrame(PfSmellRedTextureID, StartImageSrc)
+			ResetFrame(PfSmellGreenTextureID, StartImageSrc)
 			ActionReset = false
 		}
 
@@ -181,13 +183,36 @@ func UpdateGame() {
 	data.Program.SetFloat("window_height", float32(Height))
 
 	// Bind textures
-	data.Program.SetInt("PfGameRedTexture", int32(0))
+	data.Program.SetInt("PfGameTexture", int32(0))
 	data.Program.SetInt("PfSmellTexture", int32(1))
 	gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
 
 	gl.ActiveTexture(gl.TEXTURE0 + 1)                          // Smell (blurred composite of game state)
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID)) //
+
+	// Write
+	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+
+	// Update green smell
+	// =======================================================
+	gl.BindFramebuffer(gl.FRAMEBUFFER, FBSmellGreen)
+
+	data = DataSmellGreen
+	data.Enable()
+
+	// Set uniforms
+	data.Program.SetFloat("window_width", float32(Width))
+	data.Program.SetFloat("window_height", float32(Height))
+
+	// Bind textures
+	data.Program.SetInt("PfGameTexture", int32(0))
+	data.Program.SetInt("PfSmellTexture", int32(1))
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
+
+	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Write
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
@@ -214,10 +239,13 @@ func DrawDataset() {
 	// Bind textures
 	data.Program.SetInt("PfGameTexture", int32(0))
 	data.Program.SetInt("PfSmellRedTexture", int32(1))
-	gl.ActiveTexture(gl.TEXTURE0 + 0)                          // Game state
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))     //
-	gl.ActiveTexture(gl.TEXTURE0 + 1)                          // Smell (blurred composite of game state)
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID)) //
+	data.Program.SetInt("PfSmellGreenTexture", int32(2))
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                            // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))       //
+	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID))   //
+	gl.ActiveTexture(gl.TEXTURE0 + 2)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Draw Game state
 	gl.Enable(gl.BLEND)

@@ -69,7 +69,10 @@ vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
     color.g = max_green;
     if (max_green != color_game.g && max_green != color_smell.g){
         color.g *= effect;
-    }    
+    }
+
+    // evaporate    
+    color.g -= 0.002;
 
    
     // alpha fix

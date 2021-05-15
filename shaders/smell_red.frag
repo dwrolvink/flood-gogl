@@ -71,6 +71,8 @@ vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
         color.r *= effect;
     }    
 
+    // evaporate    
+    color.g -= 0.002;
    
     // alpha fix
     float max_alpha = max5(color.a, s_color1.a, s_color2.a, s_color3.a, s_color4.a);

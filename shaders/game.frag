@@ -58,8 +58,14 @@ void main() {
     vec4 GameColor = blur(PfGameTexture, TexCoord, resolution);
     vec4 SelfColor = texture(PfGameTexture, TexCoord);
 
-    float growth = 1.05;
+    float growth = 1.2;
     float rnd = rand(TexCoord);
+
+    // blue lighting
+    if (GameColor.r > 0.01 && GameColor.g > 0.01){
+        GameColor.b = 10.0*abs(GameColor.g - GameColor.r);
+    }
+    GameColor.b -= 0.002;
 
     if (GameColor.r > GameColor.g){
         // big win
@@ -71,6 +77,7 @@ void main() {
             GameColor.r = (GameColor.r - GameColor.g) * growth ;
             GameColor.g = 0;
         }
+        //GameColor.b = (GameColor.r - GameColor.g);
 
     } else {
         // big win
@@ -82,14 +89,16 @@ void main() {
             GameColor.g = (GameColor.g - GameColor.r) * growth ;
             GameColor.r = 0;
         }
+
+        //GameColor.b = (GameColor.g - GameColor.r);
     }
 
     if (GameColor.r > 0. || GameColor.g > 0.){
         GameColor.a = 1.0;
     }
 
-    GameColor.b = SelfColor.b;
-
+    //GameColor.b = SelfColor.b;
+    //GameColor.a = 1.0;
 
     FragColor =  GameColor;
     
