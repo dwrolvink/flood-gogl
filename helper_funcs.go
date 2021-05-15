@@ -10,14 +10,14 @@ func CreateQuadVertexMatrix(size float32, x_offset float32, y_offset float32) []
 	texture_bottom := float32(0.0)
 	texture_left := float32(0.0)
 	texture_right := float32(1.0)
-	z := float32(0.0)
+	//z := float32(0.0)
 
 	vertices := []float32{
 		// x, y, z, texcoordx, texcoordy
-		screen_left, screen_top, z, texture_left, texture_top,
-		screen_right, screen_top, z, texture_right, texture_top,
-		screen_left, screen_bottom, z, texture_left, texture_bottom,
-		screen_right, screen_bottom, z, texture_right, texture_bottom,
+		screen_left, screen_top, texture_left, texture_top,
+		screen_right, screen_top, texture_right, texture_top,
+		screen_left, screen_bottom, texture_left, texture_bottom,
+		screen_right, screen_bottom, texture_right, texture_bottom,
 	}
 
 	return vertices
