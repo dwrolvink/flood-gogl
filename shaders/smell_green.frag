@@ -59,23 +59,23 @@ vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
     vec4 g_color7 = texture2D(PfGameTexture, uv + (off7 / resolution)) * circular;
     vec4 g_color8 = texture2D(PfGameTexture, uv + (off8 / resolution)) * circular;       
 
-    // blur green
+    // find highest value that was retrieved
     float max_green;
     max_green = max5(color.g, s_color1.g, s_color2.g, s_color3.g, s_color4.g);
     max_green = max5(max_green, s_color5.g, s_color6.g, s_color7.g, s_color8.g);
     max_green = max5(max_green, g_color1.g, g_color2.g, g_color3.g, g_color4.g);
     max_green = max5(max_green, g_color5.g, g_color6.g, g_color7.g, g_color8.g);
 
+    // Set output color
     color.g = max_green;
     if (max_green != color_game.g && max_green != color_smell.g){
         color.g *= effect;
     }
 
-    // evaporate    
+    // Evaporate    
     color.g -= 0.002;
 
-   
-    // alpha fix
+    // Alpha fix
     float max_alpha = max5(color.a, s_color1.a, s_color2.a, s_color3.a, s_color4.a);
     color.a = max_alpha;
 
