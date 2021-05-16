@@ -96,7 +96,7 @@ func SetKeyHandling(window *glfw.Window) {
 	})
 }
 
-// Applies commandline args: --fps <N>, --record <N>, --set <'c', N>
+// Applies commandline args: --fps <N>, --record <N>
 func ParseCommandlineArgs() {
 
 	for i := range os.Args {
@@ -104,19 +104,23 @@ func ParseCommandlineArgs() {
 		// FPS
 		// -----------------------------------------------------------
 		// Apply commandline choice for fps, if present.
-		// Note that for recording, 50 fps is the max.
+		// Note that for gif recording, 50 fps is the max.
 
 		if os.Args[i] == "--fps" {
 			// check if fps value has been passed directly after --fps
 			if i+1 < len(os.Args) {
 				choice, err := strconv.Atoi(os.Args[i+1])
 				if err == nil {
+					fps = choice
 					delay_ms = int64(1000 / choice)
 				} else {
 					fmt.Println("ERROR: Could not parse input after --fps as an int.")
 				}
 			}
 		}
+	}
+
+	for i := range os.Args {
 
 		// Record
 		// -----------------------------------------------------------

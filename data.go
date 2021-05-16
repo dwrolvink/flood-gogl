@@ -13,10 +13,10 @@ import (
 */
 
 // Define the DataObjects that contain our Programs, Shaders, Sprites, etc
-func SetData() []gogl.DataObject {
+func SetData() [](*gogl.DataObject) {
 
 	// List of datasets
-	datalist := make([]gogl.DataObject, 4)
+	datalist := make([]*gogl.DataObject, 4)
 
 	// Defaults
 	var vertex_type = gogl.GOGL_QUADS
@@ -28,7 +28,7 @@ func SetData() []gogl.DataObject {
 	}
 
 	// Game state
-	datalist[0] = gogl.DataObject{
+	datalist[0] = &gogl.DataObject{
 		ProgramName:          "Game",
 		Type:                 vertex_type,
 		Vertices:             verts,
@@ -38,7 +38,7 @@ func SetData() []gogl.DataObject {
 	}
 
 	// Smell red (blurred version of gamestate)
-	datalist[1] = gogl.DataObject{
+	datalist[1] = &gogl.DataObject{
 		ProgramName:          "Smell Red",
 		Type:                 vertex_type,
 		Vertices:             verts,
@@ -48,7 +48,7 @@ func SetData() []gogl.DataObject {
 	}
 
 	// Smell green (blurred version of gamestate)
-	datalist[2] = gogl.DataObject{
+	datalist[2] = &gogl.DataObject{
 		ProgramName:          "Smell Green",
 		Type:                 vertex_type,
 		Vertices:             verts,
@@ -58,7 +58,7 @@ func SetData() []gogl.DataObject {
 	}
 
 	// Mix. Can be used to do advanced merging of textures
-	datalist[3] = gogl.DataObject{
+	datalist[3] = &gogl.DataObject{
 		ProgramName:          "Mix",
 		Type:                 vertex_type,
 		Vertices:             verts,
@@ -67,6 +67,7 @@ func SetData() []gogl.DataObject {
 		FragmentShaderSource: "shaders/mix.frag",
 	}
 
+	// Compile Shader programs
 	for i := 0; i < len(datalist); i++ {
 		datalist[i].ProcessData()
 	}

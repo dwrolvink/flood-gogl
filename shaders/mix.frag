@@ -30,7 +30,7 @@ void main() {
     }
     // Just add together
     else if (MODE == DRAW_MODE_SMELL){
-        FragColor = color_smell_green;
+        FragColor = A*color_smell_red + (1.0-A)*color_smell_green;
     }        
  
     // Blue screen of bugs

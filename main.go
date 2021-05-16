@@ -12,8 +12,6 @@ import (
 	"github.com/dwrolvink/gogl"
 	"github.com/go-gl/gl/v4.5-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-
-	"image"
 )
 
 const (
@@ -22,30 +20,32 @@ const (
 
 	GL_DEFAULT_FBO = 0
 
-	DRAW_MODE_ADD   = 1 // Just add both together
+	DRAW_MODE_ADD   = 1 // Just add both textures together
 	DRAW_MODE_MERGE = 2 // uniformf A is used as mix, 0=game, 1=smell
 	DRAW_MODE_SMELL = 3 // uniformf A is used as mix, 0=red, 0.5=both, 1.0=green
 
-	StartImageSrc = "assets/img/text2.png"
+	StartImageSrc = "assets/img/text3.png"
 )
 
 var (
-	WindowTitle           = "Test GL Application"
-	tick          float32 = 0.0                                  // ticks up every game loop cycle
-	delay_ms      int64   = 20                                   // handles frame rate
-	record        bool    = false                                // whether to record the screen.
-	record_length float32 = float32(1.0*(1000.0/delay_ms)) * 0.5 // After how many ticks to stop recording (and close the program)
+	WindowTitle = "Test GL Application"
+	window      = gogl.Init(WindowTitle, Width, Height) // Init Window, OpenGL
 
-	window = gogl.Init(WindowTitle, Width, Height) // Init Window, OpenGL
+	// Helper variables
+	tick          float32 = 0.0                      // ticks up every game loop cycle
+	fps           int     = 50                       //
+	delay_ms      int64   = 5                        // handles frame rate
+	record        bool    = false                    // whether to record the screen.
+	record_length float32 = float32(1.0*(fps)) * 0.5 // After how many ticks to stop recording (and close the program)
 
-	datalist       = SetData() // Init data
-	DataGame       = datalist[0]
-	DataSmellRed   = datalist[1]
-	DataSmellGreen = datalist[2]
-	DataMix        = datalist[3]
+	// Shader programs
+	datalist       = SetData()   // Init data
+	DataGame       = datalist[0] // The actual gamestate.
+	DataSmellRed   = datalist[1] // Just the red channel. Blurred to it extends the actual red regions
+	DataSmellGreen = datalist[2] // Just the green channel. Blurred to it extends the actual green regions
+	DataMix        = datalist[3] // Used to display a mix of the framebuffers on the screen
 
-	PfGameImg             *image.NRGBA   // intermediate storage for front buffer pixels - game state
-	PfSmellImg            *image.NRGBA   // intermediate storage for front buffer pixels - smell (blurred gamestate)
+	// Framebuffers and their attached textures
 	PfGameTextureID       gogl.TextureID // previous frame, the backbuffer gets bound to this texture after every draw.
 	PfSmellRedTextureID   gogl.TextureID //
 	PfSmellGreenTextureID gogl.TextureID //
@@ -53,7 +53,7 @@ var (
 	FBSmellRed            uint32         // can be used as a draw target when we don't want to draw to the screen
 	FBSmellGreen          uint32         // can be used as a draw target when we don't want to draw to the screen
 
-	// actions
+	// Actions. These are influenced by keystrokes
 	ActionReset              = false
 	ActionPrtsc              = false
 	ActionRecord             = false
@@ -64,25 +64,24 @@ var (
 )
 
 func main() {
-	// Get user input from commandline & link keypresses to actions
+	// Get user input from commandline & say what each keypress should do
 	SetKeyHandling(window)
 	ParseCommandlineArgs()
 
-	// Make an image to read the pixel data of the front buffer into
-	// (I don't yet know how to put this directly into the texture)
+	// Create textures for the different frame buffers
 	PfGameTextureID = NewDefaultTexture()
 	PfSmellRedTextureID = NewDefaultTexture()
 	PfSmellGreenTextureID = NewDefaultTexture()
 
-	//Create render target for when gamestate is not outputted to the screen
+	// Create frame buffer for the game state
 	ResetFrame(PfGameTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGame, PfGameTextureID)
 
-	// Home for red smell
+	// Create frame buffer for the red "smell" (used for green cells to know where the red cells are)
 	ResetFrame(PfSmellRedTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellRed, PfSmellRedTextureID)
 
-	// Home for green smell
+	// Create frame buffer for the green "smell" (used for red cells to know where the green cells are)
 	ResetFrame(PfSmellGreenTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellGreen, PfSmellGreenTextureID)
 
@@ -93,21 +92,27 @@ func main() {
 		start := time.Now()
 		tick += 1.0
 
-		if ActionReset || tick == 1.0 {
+		// Reset the textures that are bound to the frame buffers when we want to restart
+		if ActionReset {
+			ActionReset = false
 			ResetFrame(PfGameTextureID, StartImageSrc)
 			ResetFrame(PfSmellRedTextureID, StartImageSrc)
 			ResetFrame(PfSmellGreenTextureID, StartImageSrc)
-			ActionReset = false
 		}
 
-		// Draw to screen / update gamestate
+		// Each framebuffer gets updated in a recursive manner
+		// (Each fbo is the input of a calculation and the output of that same calculation)
 		UpdateGame()
-		DrawDataset()
 
-		// Handle window events
+		// What ends up on the screen is a combination of the framebuffers.
+		// What is drawn is influenced by the draw mode.
+		Draw()
+
+		// Fetch window events.
 		glfw.PollEvents()
 
-		// Check if shaders need to be recompiled
+		// Check if shaders need to be recompiled, and recompile them if so.
+		// This allows us to change the shaders mid-run.
 		gogl.HotloadShaders()
 
 		// Sanity check
@@ -115,14 +120,12 @@ func main() {
 			log.Println(err)
 		}
 
-		// Record output
+		// Record output (prtsc and gif/mp4 recording)
 		if ActionPrtsc {
-			// Printscreens
 			CreateImage(int(tick), RECORDING_PRTSC)
 			ActionPrtsc = false
 		}
 		if ActionRecord {
-			// Gif recording
 			CreateImage(int(tick), RECORDING_GIF)
 			if tick > record_length {
 				ActionRecord = false
@@ -142,99 +145,88 @@ func main() {
 }
 
 func UpdateGame() {
-	// set to overwrite whatever is on the texture (no mixing)
-	gl.Enable(gl.BLEND)
-	gl.BlendFunc(gl.ONE, gl.ZERO)
+	// Set to overwrite whatever is on the texture (no mixing)
+	gl.Disable(gl.BLEND)
 
 	// Update game
-	// =======================================================
-	// Select game buffer
+	// ---------------------------------------------
+	// Select game buffer/shader program
 	gl.BindFramebuffer(gl.FRAMEBUFFER, FBGame)
-
-	// Enable game shader program
 	data := DataGame
 	data.Enable()
 
+	// Bind correct textures
+	data.Program.SetInt("PfGameTexture", int32(0))
+	data.Program.SetInt("PfSmellTexture", int32(1))
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                            // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))       //
+	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID))   //
+	gl.ActiveTexture(gl.TEXTURE0 + 2)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
+
 	// Set uniforms
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
 
-	// Bind textures
-	data.Program.SetInt("PfGameTexture", int32(0))
-	data.Program.SetInt("PfSmellTexture", int32(1))
-	gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
-
-	gl.ActiveTexture(gl.TEXTURE0 + 1)                          // Smell (blurred composite of game state)
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID)) //
-
-	// Draw Game state
+	// Iterate Game state
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 	// Update red smell
-	// =======================================================
+	// ---------------------------------------------
 	gl.BindFramebuffer(gl.FRAMEBUFFER, FBSmellRed)
-
 	data = DataSmellRed
 	data.Enable()
 
-	// Set uniforms
-	data.Program.SetFloat("window_width", float32(Width))
-	data.Program.SetFloat("window_height", float32(Height))
-
 	// Bind textures
 	data.Program.SetInt("PfGameTexture", int32(0))
 	data.Program.SetInt("PfSmellTexture", int32(1))
-	gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
-
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                          // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))     //
 	gl.ActiveTexture(gl.TEXTURE0 + 1)                          // Smell (blurred composite of game state)
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID)) //
 
-	// Write
+	// Set uniforms
+	data.Program.SetFloat("window_width", float32(Width))
+	data.Program.SetFloat("window_height", float32(Height))
+
+	// Iterate red smell
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 	// Update green smell
-	// =======================================================
+	// ---------------------------------------------
 	gl.BindFramebuffer(gl.FRAMEBUFFER, FBSmellGreen)
-
 	data = DataSmellGreen
 	data.Enable()
+
+	// Bind textures
+	data.Program.SetInt("PfGameTexture", int32(0))
+	data.Program.SetInt("PfSmellTexture", int32(1))
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                            // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))       //
+	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Set uniforms
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
 
-	// Bind textures
-	data.Program.SetInt("PfGameTexture", int32(0))
-	data.Program.SetInt("PfSmellTexture", int32(1))
-	gl.ActiveTexture(gl.TEXTURE0 + 0)                      // Game state
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID)) //
-
-	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
-	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
-
-	// Write
+	// Iterate green smell
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 }
 
-func DrawDataset() {
+func Draw() {
 
 	// Clear screen
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	// Draw game
-	// ==============================================================
-	// Enable Blit program
+	// Set to overwrite whatever is on the texture (no mixing)
+	gl.Disable(gl.BLEND)
+
+	// Enable Mix program
 	data := DataMix
 	data.Enable()
-
-	// Set uniforms
-	data.Program.SetFloat("window_width", float32(Width))
-	data.Program.SetFloat("window_height", float32(Height))
-	data.Program.SetInt("MODE", ActionDrawMode)
-	data.Program.SetFloat("A", ActionDrawA)
 
 	// Bind textures
 	data.Program.SetInt("PfGameTexture", int32(0))
@@ -247,19 +239,15 @@ func DrawDataset() {
 	gl.ActiveTexture(gl.TEXTURE0 + 2)                            // Smell (blurred composite of game state)
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
-	// Draw Game state
-	gl.Enable(gl.BLEND)
-	gl.BlendFunc(gl.ONE, gl.ZERO)
-	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+	// Set uniforms
+	data.Program.SetFloat("window_width", float32(Width))
+	data.Program.SetFloat("window_height", float32(Height))
+	data.Program.SetInt("MODE", ActionDrawMode)
+	data.Program.SetFloat("A", ActionDrawA)
 
-	// [bug magnet]
-	/*
-		if ActionPrintSmell && ActionPrintGame {
-			gl.BlendEquation(gl.MAX)
-		}
-	*/
+	// Draw Game state to screen
+	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 	// Put buffer that we painted on (gl.BACK) on the foreground.
 	window.SwapBuffers()
-
 }

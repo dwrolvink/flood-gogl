@@ -4,7 +4,8 @@ in vec2 TexCoord;
 
 
 uniform sampler2D PfGameTexture;
-uniform sampler2D PfSmellTexture;
+uniform sampler2D PfSmellRedTexture;
+uniform sampler2D PfSmellGreenTexture;
 
 uniform float window_width;
 uniform float window_height;
@@ -69,7 +70,7 @@ void main() {
 
     if (GameColor.r > GameColor.g){
         // big win
-        if (GameColor.r - GameColor.g > 0.01){
+        if (GameColor.r - GameColor.g > 0.5){
             GameColor.r = GameColor.r * growth ;
             GameColor.g = 0;
         }

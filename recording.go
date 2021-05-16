@@ -30,71 +30,66 @@ func InitRecording() {
 	}
 }
 
+// Used in PrtSc.
 // Reads out the pixel data in gl.FRONT, and saves it to recording/temp/image<Tick>.png when mode == RECORDING_GIF
 // When mode == RECORDING_PRTSC, the save location is "recording/printscreens/<datetime>.png
 func CreateImage(number int, mode int) {
-	if mode == RECORDING_GIF {
-		fmt.Println("Recording frame", tick, "of", record_length)
-	}
-
-	filename := fmt.Sprintf("image%03d.png", number)
+	// Init
 	width := Width
 	height := Height
 
+	// Set folder and filename
+	var filename string
 	var folder string
 	if mode == RECORDING_PRTSC {
-		folder = "recording/printscreens/"
-
 		currentTime := time.Now()
 		filename = currentTime.Format("2006-01-02 15:04:05.000000") + ".png"
+		folder = "recording/printscreens/"
 	} else {
+		filename = fmt.Sprintf("image%03d.png", number)
 		folder = "recording/temp/"
 	}
 
+	// Create empty image to receive the pixel data
 	img := image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{width, height}})
 
+	// Copy the pixel data from the default front buffer to the image
 	gl.ReadBuffer(gl.FRONT)
 	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(img.Pix))
 	img = imaging.FlipV(img)
 
-	// Make bacground black (starting texture has an alpha layer)
-	w := img.Bounds().Max.X
-	h := img.Bounds().Max.Y
-	byteIndex := 0
-	for y := h - 1; y >= 0; y-- {
-		for x := 0; x < w; x++ {
-			//pixels[byteIndex] = byte(r / 256)
-			byteIndex++
-			//pixels[byteIndex] = byte(g / 256)
-			byteIndex++
-			//pixels[byteIndex] = byte(b / 256)
-			byteIndex++
-			img.Pix[byteIndex] = byte(255)
-			byteIndex++
-		}
+	// Make bacground black (in case starting texture has an alpha layer)
+	byteIndex := 3
+	for byteIndex < len(img.Pix) {
+		img.Pix[byteIndex] = byte(255)
+		byteIndex += 4
 	}
 
 	// Encode as PNG.
 	f, _ := os.Create(folder + filename)
 	png.Encode(f, img)
 
-	if mode == RECORDING_PRTSC {
+	// Terminal feedback
+	if mode == RECORDING_GIF {
+		fmt.Println("Recording frame", tick, "of", record_length)
+	} else if mode == RECORDING_PRTSC {
 		fmt.Println("Created " + folder + filename)
 	}
 
 }
 
-// Takes all the frame images in recording/temp and makes a palletted gif out of it using ffmpeg.
+// Takes all the frame images in recording/temp and makes an mp4/palletted-gif out of it using ffmpeg.
 func CompileGif() {
-	filename := time.Now().Unix()
-
+	// terminal feedback
 	fmt.Println("Compiling gif, don't close the window.")
 
-	cmd, err := exec.Command("/bin/sh", "scripts/make_gif.sh", fmt.Sprint(filename)).Output()
+	// run script to compile output and cleanup separate images
+	filename := time.Now().Unix()
+	cmd, err := exec.Command("/bin/sh", "scripts/make_gif.sh", fmt.Sprint(filename), fmt.Sprint(fps)).Output()
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}
-	fmt.Println(cmd)
 
-	fmt.Println("Compilation done.")
+	fmt.Println(cmd)                 // empty when no problems
+	fmt.Println("Compilation done.") //
 }
