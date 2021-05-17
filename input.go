@@ -71,6 +71,20 @@ func SetKeyHandling(window *glfw.Window) {
 					ActionDrawA = 1.0
 				}
 			}
+		case "113": // arrow left
+			if action == Down || action == Repeat {
+				ActorDotRadius -= 0.002
+				if ActorDotRadius < 0.0 {
+					ActorDotRadius = 0.0
+				}
+			}
+		case "114": // arrow right
+			if action == Down || action == Repeat {
+				ActorDotRadius += 0.002
+				if ActorDotRadius > 2.0 {
+					ActorDotRadius = 2.0
+				}
+			}
 		case "p":
 			if action == Down {
 				ActionPrtsc = true

@@ -69,7 +69,7 @@ var (
 
 	// Actors
 	ActorDotPos    [2]float32 = [2]float32{0.5, 0.5}
-	ActorDotRadius float32    = 0.01
+	ActorDotRadius float32    = 0.002
 )
 
 func main() {

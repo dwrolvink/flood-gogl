@@ -100,14 +100,21 @@ void main() {
     GameColor.a = 1.0;
 
     float d = ToroidalDistance(TexCoord, Actor1);
+    float d2 = ToroidalDistance(TexCoord, vec2(0.5, 0.5));
     float r = Actor1Radius;
-    float sharpness = 100.0 * r;
+    float sharpness = 10.0 * r;
+    float c = 0.0;
     if (d <= r){        
-        float c = 1 - sharpness*max(0, (d - r)/r);
-            GameColor.r = 0.0;
-            GameColor.g = c;
-            GameColor.b = 1.0;
-    }
+        c += 1.0 - sharpness*max(0.0, (d - r)/r);
+        GameColor.r = 0.0;
+        GameColor.g = c;
+        GameColor.b = c;
+    } else if (d2 <= r){        
+        c += 1.0 - sharpness*max(0.0, (d2 - r)/r);
+        GameColor.r = 0.0;
+        GameColor.g = c;
+        GameColor.b = c;
+    } 
     
 
     // Done
