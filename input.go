@@ -22,6 +22,35 @@ func SetKeyHandling(window *glfw.Window) {
 			char = fmt.Sprint(scancode)
 		}
 
+		// Handle keystrokes by keyboard position (locale independent)
+		switch key {
+		case glfw.KeyA:
+			if action == Down {
+				KeyAActive = true
+			} else if action == Up {
+				KeyAActive = false
+			}
+		case glfw.KeyD:
+			if action == Down {
+				KeyDActive = true
+			} else if action == Up {
+				KeyDActive = false
+			}
+
+		case glfw.KeyS:
+			if action == Down {
+				KeySActive = true
+			} else if action == Up {
+				KeySActive = false
+			}
+		case glfw.KeyW:
+			if action == Down {
+				KeyWActive = true
+			} else if action == Up {
+				KeyWActive = false
+			}
+		}
+
 		// Handle keystrokes
 		switch char {
 		case "65": // space
@@ -88,10 +117,12 @@ func SetKeyHandling(window *glfw.Window) {
 		default:
 			// get keychars if key is repeated and not matched
 			if action == Repeat {
-				fmt.Println("action, char, key, scancode:", action, char, key, scancode)
+				//fmt.Println("action, char, key, scancode:", action, char, key, scancode)
 			}
 
 		}
+
+		fmt.Println("action, char, key, scancode:", action, char, key, scancode)
 
 	})
 }

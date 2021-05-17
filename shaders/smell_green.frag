@@ -14,10 +14,10 @@ float max5 (float v0, float v1, float v2, float v3, float v4) {
 }
 
 vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
-    float effect = 0.96;
-    float circular = 0.982;
+    float effect = 0.985 ;
+    float circular = 0.99;
 
-    vec4 color = vec4(0.0);
+    vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 color_smell = vec4(0.0);
     vec4 color_game = vec4(0.0);
     vec4 s_color;
@@ -68,16 +68,10 @@ vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
 
     // Set output color
     color.g = max_green;
-    if (max_green != color_game.g && max_green != color_smell.g){
-        color.g *= effect;
-    }
+    color.g *= effect;
 
     // Evaporate    
-    color.g -= 0.002;
-
-    // Alpha fix
-    float max_alpha = max5(color.a, s_color1.a, s_color2.a, s_color3.a, s_color4.a);
-    color.a = max_alpha;
+    color.g -= 0.002;    
 
     return color;
 }

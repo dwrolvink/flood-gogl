@@ -60,7 +60,16 @@ var (
 	ActionPrintSmell         = true
 	ActionPrintGame          = true
 	ActionDrawMode   int32   = DRAW_MODE_ADD
-	ActionDrawA      float32 = 0.5
+	ActionDrawA      float32 = 0.0
+
+	KeyWActive bool = false
+	KeyAActive bool = false
+	KeySActive bool = false
+	KeyDActive bool = false
+
+	// Actors
+	ActorDotPos    [2]float32 = [2]float32{0.5, 0.5}
+	ActorDotRadius float32    = 0.01
 )
 
 func main() {
@@ -98,6 +107,32 @@ func main() {
 			ResetFrame(PfGameTextureID, StartImageSrc)
 			ResetFrame(PfSmellRedTextureID, StartImageSrc)
 			ResetFrame(PfSmellGreenTextureID, StartImageSrc)
+		}
+
+		// key actions
+		if KeyAActive {
+			ActorDotPos[0] -= 0.01
+			if ActorDotPos[0] < 0.0 {
+				ActorDotPos[0] += 1.0
+			}
+		}
+		if KeyDActive {
+			ActorDotPos[0] += 0.01
+			if ActorDotPos[0] > 1.0 {
+				ActorDotPos[0] -= 1.0
+			}
+		}
+		if KeySActive {
+			ActorDotPos[1] -= 0.01
+			if ActorDotPos[1] < 0.0 {
+				ActorDotPos[1] += 1.0
+			}
+		}
+		if KeyWActive {
+			ActorDotPos[1] += 0.01
+			if ActorDotPos[1] > 1.0 {
+				ActorDotPos[1] -= 1.0
+			}
 		}
 
 		// Each framebuffer gets updated in a recursive manner
@@ -168,6 +203,9 @@ func UpdateGame() {
 	// Set uniforms
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
+	data.Program.SetFloat("window_height", float32(Height))
+	data.Program.SetFloatVector2("Actor1", &ActorDotPos)
+	data.Program.SetFloat("Actor1Radius", ActorDotRadius)
 
 	// Iterate Game state
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))

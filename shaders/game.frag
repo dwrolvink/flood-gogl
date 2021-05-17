@@ -10,6 +10,9 @@ uniform sampler2D PfSmellGreenTexture;
 uniform float window_width;
 uniform float window_height;
 
+uniform vec2 Actor1;
+uniform float Actor1Radius;
+
 float max5 (float v0, float v1, float v2, float v3, float v4) {
   return max( max( max( max(v0, v1), v2), v3), v4);
 }
@@ -42,9 +45,23 @@ vec4 average(sampler2D image, vec2 uv, vec2 resolution) {
     return color;
 }
 
+float ToroidalDistance (vec2 P1, vec2 P2)
+{
+    float dx = abs(P2.s - P1.s);
+    float dy = abs(P2.t - P1.t);
+ 
+    if (dx > 0.5)
+        dx = 1.0 - dx;
+ 
+    if (dy > 0.5)
+        dy = 1.0 - dy;
+ 
+    return sqrt(dx*dx + dy*dy);
+}
+
 void main() {
     vec2 resolution = vec2(window_width, window_height);
-    float growth = 1.2;
+    float growth = 1.3;
     float rnd = rand(TexCoord);    
 
     // Get average of 5 cells
@@ -80,12 +97,21 @@ void main() {
         }
     }
 
-    if (GameColor.r > 0. || GameColor.g > 0.){
-        GameColor.a = 1.0;
+    GameColor.a = 1.0;
+
+    float d = ToroidalDistance(TexCoord, Actor1);
+    float r = Actor1Radius;
+    float sharpness = 100.0 * r;
+    if (d <= r){        
+        float c = 1 - sharpness*max(0, (d - r)/r);
+            GameColor.r = 0.0;
+            GameColor.g = c;
+            GameColor.b = 1.0;
     }
+    
 
     // Done
-    FragColor =  GameColor;
+    FragColor = GameColor;
     
     
 }

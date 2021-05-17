@@ -68,16 +68,13 @@ vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
 
     // Set output color
     color.r = max_red;
-    if (max_red != color_game.r && max_red != color_smell.r){
-        color.r *= effect;
-    }    
+    color.r *= effect;   
 
     // Evaporate    
-    color.g -= 0.002;
+    color.r -= 0.002;
    
-    // Alpha fix
-    float max_alpha = max5(color.a, s_color1.a, s_color2.a, s_color3.a, s_color4.a);
-    color.a = max_alpha;
+    // alpha fix
+    color.a = 1.0;
 
     return color;
 }
