@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	Width  = 480 // Width of the main window
-	Height = 480 // Height of the main window
+	Width  = 1280 // Width of the main window, needs to be the same as the image that's loaded in StartImageSrc
+	Height = 1280 // Height of the main window, needs to be the same as the image that's loaded in StartImageSrc
 
 	GL_DEFAULT_FBO = 0
 
@@ -24,7 +24,7 @@ const (
 	DRAW_MODE_MERGE = 2 // uniformf A is used as mix, 0=game, 1=smell
 	DRAW_MODE_SMELL = 3 // uniformf A is used as mix, 0=red, 0.5=both, 1.0=green
 
-	StartImageSrc = "assets/img/text3.png"
+	StartImageSrc = "assets/img/image.png" // Needs to be a png
 )
 
 var (
