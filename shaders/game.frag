@@ -16,14 +16,17 @@ uniform float Actor1Radius;
 
 vec2 Resolution = vec2(window_width, window_height);
 
+int RED = 0;
+int GREEN = 1;
+
 // settings
 float MinGrowth = 1.01;
 
 // reusables
 vec2 Top = vec2(0.0, 1.0);
-vec2 Bottom = vec2(0, -1.0);
-vec2 Left = vec2(-1, 0);
-vec2 Right = vec2(1, 0);
+vec2 Bottom = vec2(0.0, -1.0);
+vec2 Left = vec2(-1.0, 0.0);
+vec2 Right = vec2(1.0, 0.0);
 
 
 // helper functions
@@ -103,196 +106,81 @@ vec4 average(sampler2D image, vec2 uv) {
 // }
 
 // game logic
-vec2 pick_highest_value_coords(sampler2D tex, vec2 coords) {
-    vec4 top_value = get_color_by_coord(tex, coords + Top);
-    vec4 bottom_value = get_color_by_coord(tex, coords + Bottom);
-    vec4 left_value = get_color_by_coord(tex, coords + Left);
-    vec4 right_value = get_color_by_coord(tex, coords + Right);
 
-    float max_value = 0.0;
-    vec2 receiver_coords = coords;
+vec2 pick_target (int c, vec2 coords) {
+    vec4 value = get_color_by_coord(PfGameTexture, coords);
 
-    if (top_value.g > max_value) {
-        max_value = top_value.g;
-        receiver_coords = coords + Top;
+    // pick no target if no red in cell
+    if (value[c] < 0.5) {
+        return coords;
     }
-    if (bottom_value.g > max_value) {
-        max_value = bottom_value.g;
-        receiver_coords = coords + Bottom;
+
+    vec4 value_top = get_color_by_coord(PfGameTexture, coords + Top);
+    vec4 value_bottom = get_color_by_coord(PfGameTexture, coords + Bottom);
+    vec4 value_left = get_color_by_coord(PfGameTexture, coords + Left);
+    vec4 value_right = get_color_by_coord(PfGameTexture, coords + Right);
+
+    vec2 target_coords = coords;
+    float min_value = 1000.0;
+
+    if (value_top[c] < min_value) {
+        target_coords = coords + Top;
+        min_value = value_top[c];
     }
-    if (left_value.g > max_value) {
-        max_value = left_value.g;
-        receiver_coords = coords + Left;
+    if (value_bottom[c] < min_value) {
+        target_coords = coords + Bottom;
+        min_value = value_bottom[c];
     }
-    if (right_value.g > max_value) {
-        max_value = right_value.g;
-        receiver_coords = coords + Right;
-    }    
-
-    return receiver_coords;
-}
-
-// vec2 pick_lowest_value_coords(sampler2D tex, vec2 coords) {
-//     vec4 top_value = get_color_by_coord(tex, coords + Top);
-//     vec4 bottom_value = get_color_by_coord(tex, coords + Bottom);
-//     vec4 left_value = get_color_by_coord(tex, coords + Left);
-//     vec4 right_value = get_color_by_coord(tex, coords + Right);
-
-//     float min_value = 1.0;
-//     vec2 receiver_coords = coords;
-
-//     if (top_value.r < min_value) {
-//         min_value = top_value.r;
-//         receiver_coords = Top;
-//     }
-//     if (bottom_value.r < min_value) {
-//         min_value = bottom_value.r;
-//         receiver_coords = Bottom;
-//     }
-//     if (left_value.r < min_value) {
-//         min_value = left_value.r;
-//         receiver_coords = Left;
-//     }
-//     if (right_value.r < min_value) {
-//         min_value = right_value.r;
-//         receiver_coords = Right;
-//     }    
-
-//     return receiver_coords;
-// }
-
-// vec2 pick_receiver_coords(vec2 coords) {
-//     // pick the cell with the strongest enemy smell
-//     // vec2 receiver_coords = pick_highest_value_coords(PfSmellGreenTexture, coords);
-//     // if (receiver_coords != coords){
-//     //     return receiver_coords;
-//     // }
-    
-
-//     // pick cell with lowest own value
-//     vec2 receiver_coords = pick_lowest_value_coords(PfGameTexture, coords);
-//     if (receiver_coords != coords){
-//         return receiver_coords;
-//     }
-
-//     return coords;
-// }
-
-vec2 pick_bottom(vec2 coords) {
-    vec4 color = get_color_by_coord(PfGameTexture, coords);
-    if (color.r > 0.){
-        return coords + Bottom;
+    if (value_left[c] < min_value) {
+        target_coords = coords + Left;
+        min_value = value_left[c];
     }
-    return coords + Left;
+    if (value_right[c] < min_value) {
+        target_coords = coords + Right;
+        min_value = value_right[c];
+    }
 
+    return target_coords;
 
 }
 
-vec2 pick_top(vec2 coords) {
-    vec4 color_bottom = get_color_by_coord(PfGameTexture, coords + Top);
-    if (color_bottom.r > 0.){
-        return coords + Top;
-    }
-    return coords + Left;
-}
 
-float action_red () {
+float strat2 (int c) {
     vec2 uv = TexCoord;
     vec2 coords = uv_to_coords(uv);
 
-    //vec4 cell = value_at(PfGameTexture, uv);
     vec4 cell = get_color_by_coord(PfGameTexture, coords);
+    float g = 1.01;
+    float a = 0.5;
 
-    float send_threshold = 0.4;
-
-    // [send] don't send if not at the minimum
-    // if (cell.r > send_threshold) {
-    //     vec2 receiver_coords = pick_receiver_coords(uv);
-    //     if (equals(mock_receiver_coords,uv)) {
-    //         vec4 receiver = value_at(PfGameTexture, receiver_coords);
-    //         float max_send = (1.0 - receiver.r) * 0.25;
-    //         float min_send = cell.r - 0.05;
-    //         cell.r -= min(min_send, max_send);
-    //     }
-    // }
-
-    // [receive] for each neighbour, we will check if we will receive any of them and add it to our total
-    vec4 receiver = get_color_by_coord(PfGameTexture, coords);
-
-    vec4 sender = get_color_by_coord(PfGameTexture, coords + Top + Right);
-
-    vec2 picked_coords = pick_bottom(coords + Top);
-    if (picked_coords == coords) {
-        vec4 color = get_color_by_coord(PfGameTexture, coords + Top);
-        if (color.r > 0.0) {
-            cell.r += color.r;
-        }
+    vec2 test;
+    // send
+    test = pick_target(c, coords);
+    if (test.x != coords.x || test.y != coords.y) {
+        cell[c] = max(0.0, cell[c] - a);
     }
 
-    picked_coords = pick_bottom(coords + Left);
-    if (picked_coords == coords) {
-        vec4 color = get_color_by_coord(PfGameTexture, coords + Left);
-        if (color.r > 0.0) {
-            cell.r += color.r;
-        }
+    // receive
+    test = pick_target(c, coords + Top);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target(c, coords + Bottom);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target(c, coords + Left);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target(c, coords + Right);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
     }
 
-    // picked_coords = pick_top(coords + Bottom);
-    // if (picked_coords == coords) {
-    //     vec4 color = get_color_by_coord(PfGameTexture, coords + Bottom);
-    //     if (color.r > 0.0) {
-    //         cell.r += color.r;
-    //     }
-    // }
 
-
-
-    // if (sender.r > send_threshold) {
-    //     vec2 mock_receiver_coords = pick_receiver_coords(coords + Top);
-    //     if (equals(mock_receiver_coords,coords)){
-    //         float max_send = (1.0 - receiver.r) * 0.25;
-    //         float min_send = sender.r - 0.05;
-    //         cell.r += min(min_send, max_send);
-    //     }
-    // }
-
-    // sender = get_color_by_coord(PfGameTexture, coords + Bottom);
-    // if (sender.r > send_threshold) {
-    //     vec2 mock_receiver_coords = pick_receiver_coords(coords + Bottom);
-    //     if (equals(mock_receiver_coords,coords)){
-    //         float max_send = (1.0 - receiver.r) * 0.25;
-    //         float min_send = sender.r - 0.05;
-    //         cell.r += min(min_send, max_send);
-    //     }
-    // }
-
-    // sender = get_color_by_coord(PfGameTexture, coords + Left);
-    // if (sender.r > send_threshold) {
-    //     vec2 mock_receiver_coords = pick_receiver_coords(coords + Left);
-    //     if (equals(mock_receiver_coords,coords)){
-    //         float max_send = (1.0 - receiver.r) * 0.25;
-    //         float min_send = sender.r - 0.05;
-    //         cell.r += min(min_send, max_send);
-    //     }
-    // }
-
-    // sender = get_color_by_coord(PfGameTexture, coords + Right);
-    // if (sender.r > send_threshold) {
-    //     vec2 mock_receiver_coords = pick_receiver_coords(coords + Right);
-    //     if (equals(mock_receiver_coords,coords)){
-    //         float max_send = (1.0 - receiver.r) * 0.25;
-    //         float min_send = sender.r - 0.05;
-    //         cell.r += min(min_send, max_send);
-    //     }
-    // }
-
-    // growth 
-    float growth_factor = 1.0 + (0.01 * cell.r);
-    growth_factor = max(growth_factor, MinGrowth);
-    cell.r = cell.r * growth_factor;
-    
     // return
-    return cell.r;
+    return cell[c] * g;
 }
 
 
@@ -359,8 +247,9 @@ void main() {
     // }
 
 
-    GameColor.g = action_green();
-    GameColor.r = action_red();
+    //GameColor.g = action_green();
+    GameColor.g = strat2(GREEN);
+    GameColor.r = strat2(RED);
 
     // blue lighting where battle takes place
     if (GameColor.r > 0.01 && GameColor.g > 0.01){

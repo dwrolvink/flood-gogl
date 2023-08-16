@@ -44,12 +44,15 @@ var (
 	DataSmellRed   = datalist[1] // Just the red channel. Blurred to it extends the actual red regions
 	DataSmellGreen = datalist[2] // Just the green channel. Blurred to it extends the actual green regions
 	DataMix        = datalist[3] // Used to display a mix of the framebuffers on the screen
+	DataSwapGame   = datalist[4] // Used to display a mix of the framebuffers on the screen
 
 	// Framebuffers and their attached textures
 	PfGameTextureID       gogl.TextureID // previous frame, the backbuffer gets bound to this texture after every draw.
+	PfGameTextureWriteID  gogl.TextureID // [test]
 	PfSmellRedTextureID   gogl.TextureID //
 	PfSmellGreenTextureID gogl.TextureID //
 	FBGame                uint32         // can be used as a draw target when we don't want to draw to the screen
+	FBGameWrite           uint32         // [test]
 	FBSmellRed            uint32         // can be used as a draw target when we don't want to draw to the screen
 	FBSmellGreen          uint32         // can be used as a draw target when we don't want to draw to the screen
 
@@ -83,9 +86,14 @@ func main() {
 	ParseCommandlineArgs()
 
 	// Create textures for the different frame buffers
+	PfGameTextureWriteID = NewDefaultTexture() // [test]
 	PfGameTextureID = NewDefaultTexture()
+
 	PfSmellRedTextureID = NewDefaultTexture()
 	PfSmellGreenTextureID = NewDefaultTexture()
+
+	ResetFrame(PfGameTextureWriteID, StartImageSrc) // texture needs to be initialized before linking to FBO
+	CreateFramebuffer(&FBGameWrite, PfGameTextureWriteID)
 
 	// Create frame buffer for the game state
 	ResetFrame(PfGameTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
@@ -109,6 +117,7 @@ func main() {
 		// Reset the textures that are bound to the frame buffers when we want to restart
 		if ActionReset {
 			ActionReset = false
+			ResetFrame(PfGameTextureWriteID, StartImageSrc)
 			ResetFrame(PfGameTextureID, StartImageSrc)
 			ResetFrame(PfSmellRedTextureID, StartImageSrc)
 			ResetFrame(PfSmellGreenTextureID, StartImageSrc)
@@ -157,7 +166,7 @@ func main() {
 
 		// Sanity check
 		if err := gl.GetError(); err != 0 {
-			log.Println(err)
+			log.Println("test", err)
 		}
 
 		// Record output (prtsc and gif/mp4 recording)
@@ -193,7 +202,9 @@ func UpdateGame() {
 	// Update game
 	// ---------------------------------------------
 	// Select game buffer/shader program
-	gl.BindFramebuffer(gl.FRAMEBUFFER, FBGame)
+	//  gl.BindFramebuffer(gl.FRAMEBUFFER, FBGameWrite)
+	gl.BindFramebuffer(gl.DRAW_FRAMEBUFFER, FBGameWrite) // [test]
+	gl.BindFramebuffer(gl.READ_FRAMEBUFFER, FBGame)      // [test]
 	data := DataGame
 	data.Enable()
 
@@ -215,6 +226,21 @@ func UpdateGame() {
 	data.Program.SetFloat("window_height", float32(Height))
 	data.Program.SetFloatVector2("Actor1", &ActorDotPos)
 	data.Program.SetFloat("Actor1Radius", ActorDotRadius)
+
+	// Iterate Game state
+	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+
+	// copy write PBO to read FBO
+	// ---------------------------------------------
+	// Select game buffer/shader program
+	gl.BindFramebuffer(gl.FRAMEBUFFER, FBGame)
+	data = DataSwapGame
+	data.Enable()
+
+	// Bind correct textures
+	data.Program.SetInt("PfGameTexture", int32(0))
+	gl.ActiveTexture(gl.TEXTURE0 + 0)                           // Game state
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureWriteID)) //
 
 	// Iterate Game state
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))

@@ -16,7 +16,7 @@ import (
 func SetData() [](*gogl.DataObject) {
 
 	// List of datasets
-	datalist := make([]*gogl.DataObject, 4)
+	datalist := make([]*gogl.DataObject, 5)
 
 	// Defaults
 	var vertex_type = gogl.GOGL_QUADS
@@ -65,6 +65,16 @@ func SetData() [](*gogl.DataObject) {
 		Indices:              indices,
 		VertexShaderSource:   vShader,
 		FragmentShaderSource: "shaders/mix.frag",
+	}
+
+	// used to blit write texture to read texture so that we are not reading and writing on the same texture
+	datalist[4] = &gogl.DataObject{
+		ProgramName:          "SwapGame",
+		Type:                 vertex_type,
+		Vertices:             verts,
+		Indices:              indices,
+		VertexShaderSource:   vShader,
+		FragmentShaderSource: "shaders/blit.frag",
 	}
 
 	// Compile Shader programs
