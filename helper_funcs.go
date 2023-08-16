@@ -1,5 +1,10 @@
 package main
 
+import (
+	"image"
+	"os"
+)
+
 // Easy way to create a quad with a certain size and offset
 func CreateQuadVertexMatrix(size float32, x_offset float32, y_offset float32) []float32 {
 	screen_left := -size + x_offset
@@ -31,4 +36,31 @@ func contains_si(slice []int, element int) bool {
 		}
 	}
 	return false
+}
+
+type img_dims struct {
+	Width  int
+	Height int
+}
+
+func get_image_dimensions(image_path string) img_dims {
+	reader, err := os.Open(StartImageSrc)
+	if err != nil {
+		panic(err)
+	}
+	defer reader.Close()
+
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		panic(err)
+	}
+
+	bounds := m.Bounds()
+	w := bounds.Dx()
+	h := bounds.Dy()
+
+	return img_dims{
+		Width:  w,
+		Height: h,
+	}
 }

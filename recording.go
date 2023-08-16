@@ -55,7 +55,7 @@ func CreateImage(number int, mode int) {
 
 	// Copy the pixel data from the default front buffer to the image
 	gl.ReadBuffer(gl.FRONT)
-	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(img.Pix))
+	gl.ReadPixels(0, 0, int32(Width), int32(Height), gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(img.Pix))
 	img = imaging.FlipV(img)
 
 	// Make bacground black (in case starting texture has an alpha layer)

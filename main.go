@@ -15,9 +15,6 @@ import (
 )
 
 const (
-	Width  = 1280 // Width of the main window, needs to be the same as the image that's loaded in StartImageSrc
-	Height = 1280 // Height of the main window, needs to be the same as the image that's loaded in StartImageSrc
-
 	GL_DEFAULT_FBO = 0
 
 	DRAW_MODE_ADD   = 1 // Just add both textures together
@@ -28,6 +25,9 @@ const (
 )
 
 var (
+	Width  = Config.Screen.Width  // Width of the main window, needs to be the same as the image that's loaded in StartImageSrc
+	Height = Config.Screen.Height // Height of the main window, needs to be the same as the image that's loaded in StartImageSrc
+
 	WindowTitle = "Test GL Application"
 	window      = gogl.Init(WindowTitle, Width, Height) // Init Window, OpenGL
 
@@ -64,8 +64,8 @@ var (
 
 	KeyWActive bool = false
 	KeyAActive bool = false
+	KeyRActive bool = false
 	KeySActive bool = false
-	KeyDActive bool = false
 
 	// Actors
 	ActorDotPos    [2]float32 = [2]float32{0.5, 0.5}
@@ -73,6 +73,11 @@ var (
 )
 
 func main() {
+	// disable player
+	if Config.Player.Enabled == false {
+		ActorDotRadius = 0
+	}
+
 	// Get user input from commandline & say what each keypress should do
 	SetKeyHandling(window)
 	ParseCommandlineArgs()
@@ -116,13 +121,13 @@ func main() {
 				ActorDotPos[0] += 1.0
 			}
 		}
-		if KeyDActive {
+		if KeySActive {
 			ActorDotPos[0] += 0.01
 			if ActorDotPos[0] > 1.0 {
 				ActorDotPos[0] -= 1.0
 			}
 		}
-		if KeySActive {
+		if KeyRActive {
 			ActorDotPos[1] -= 0.01
 			if ActorDotPos[1] < 0.0 {
 				ActorDotPos[1] += 1.0
@@ -183,6 +188,8 @@ func UpdateGame() {
 	// Set to overwrite whatever is on the texture (no mixing)
 	gl.Disable(gl.BLEND)
 
+	now := time.Now()
+
 	// Update game
 	// ---------------------------------------------
 	// Select game buffer/shader program
@@ -201,6 +208,8 @@ func UpdateGame() {
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Set uniforms
+	// fmt.Println(int32(now.Unix()%100) / 2)
+	data.Program.SetInt("iTime", int32(now.Unix()%100)/2)
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
 	data.Program.SetFloat("window_height", float32(Height))

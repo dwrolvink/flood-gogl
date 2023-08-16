@@ -30,11 +30,11 @@ func SetKeyHandling(window *glfw.Window) {
 			} else if action == Up {
 				KeyAActive = false
 			}
-		case glfw.KeyD:
+		case glfw.KeyR:
 			if action == Down {
-				KeyDActive = true
+				KeyRActive = true
 			} else if action == Up {
-				KeyDActive = false
+				KeyRActive = false
 			}
 
 		case glfw.KeyS:

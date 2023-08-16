@@ -18,8 +18,8 @@ func NewDefaultTexture() gogl.TextureID {
 	gl.BindTexture(gl.TEXTURE_2D, uint32(textureID))
 
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
 	return textureID
 }
@@ -37,7 +37,7 @@ func ResetFrame(textureID gogl.TextureID, imgSource string) {
 // Gets pixels from front buffer, and puts them in the pixel array of the given image.
 func ReadBuffer(bufferID uint32, imgStorage *image.NRGBA) {
 	gl.ReadBuffer(bufferID)
-	gl.ReadPixels(0, 0, Width, Height, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(imgStorage.Pix))
+	gl.ReadPixels(0, 0, int32(Width), int32(Height), gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(imgStorage.Pix))
 }
 
 // Bind FBO, and copy its pixel data over to the given texture
@@ -52,7 +52,7 @@ func TakeBufferSnapshot(bufferID uint32, textureID gogl.TextureID) {
 
 	// Copy pixel data over to the given texture
 	gl.BindTexture(gl.TEXTURE_2D, uint32(textureID)) //A texture you have already created storage for
-	gl.CopyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, Width, Height)
+	gl.CopyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, int32(Width), int32(Height))
 
 	// Restore defaults before function call
 	gl.BindFramebuffer(gl.READ_FRAMEBUFFER, uint32(drawFboId))
