@@ -141,7 +141,6 @@ vec2 pick_target (int c, vec2 coords) {
     }
 
     return target_coords;
-
 }
 
 
@@ -184,72 +183,87 @@ float strat2 (int c) {
 }
 
 
-float action_green () {
-    vec4 GameColor = average(PfGameTexture, TexCoord);
 
-    // growth 
-    float growth_factor = 1.0 + (0.1 * GameColor.g);
-    growth_factor = max(growth_factor, MinGrowth);
-    GameColor.g = GameColor.g * growth_factor;
+vec2 pick_target2 (int c, vec2 coords) {
+    vec4 value = get_color_by_coord(PfGameTexture, coords);
 
-    return GameColor.g;
+    // pick no target if no red in cell
+    if (value[c] < 0.5) {
+        return coords;
+    }
+
+    vec4 value_top = get_color_by_coord(PfGameTexture, coords + Top);
+    vec4 value_bottom = get_color_by_coord(PfGameTexture, coords + Bottom);
+    vec4 value_left = get_color_by_coord(PfGameTexture, coords + Left);
+    vec4 value_right = get_color_by_coord(PfGameTexture, coords + Right);
+
+    vec2 target_coords = coords;
+    float min_value = 1000.0;
+
+    if (value_top[c] < min_value) {
+        target_coords = coords + Top;
+        min_value = value_top[c];
+    }
+    if (value_bottom[c] < min_value) {
+        target_coords = coords + Bottom;
+        min_value = value_bottom[c];
+    }
+    if (value_left[c] < min_value) {
+        target_coords = coords + Left;
+        min_value = value_left[c];
+    }
+    if (value_right[c] < min_value) {
+        target_coords = coords + Right;
+        min_value = value_right[c];
+    }
+
+    return target_coords;
 }
 
-// float action_red (vec2 uv) {
-//     vec4 GameColor = average(PfGameTexture, uv);
+float strat3 (int c) {
+    vec2 uv = TexCoord;
+    vec2 coords = uv_to_coords(uv);
 
-//     // growth 
-//     float growth_factor = 1.0 + (0.1 * GameColor.r);
-//     growth_factor = max(growth_factor, MinGrowth);
-//     GameColor.r = GameColor.r * growth_factor;
+    vec4 cell = get_color_by_coord(PfGameTexture, coords);
+    float g = 1.01;
+    float a = 0.5;
 
-//     return GameColor.r;
-// }
+    vec2 test;
+    // send
+    test = pick_target2(c, coords);
+    if (test.x != coords.x || test.y != coords.y) {
+        cell[c] = max(0.0, cell[c] - a);
+    }
+
+    // receive
+    test = pick_target2(c, coords + Top);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target2(c, coords + Bottom);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target2(c, coords + Left);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+    test = pick_target2(c, coords + Right);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[c] = min(1.0, cell[c] + a);
+    }
+
+
+    // return
+    return cell[c] * g;
+}
+
 
 void main() {
-    // float rnd = rand(TexCoord);    
-
-    // Get average of 5 cells
-    // vec4 GameColor = average(PfGameTexture, TexCoord);
     vec4 GameColor = value_at(PfGameTexture, TexCoord);
-    // GameColor = GameColor * vec4(1.3, 1.3, 0.99, 1.0);
-    
 
-    // if (iTime >= 0 && iTime < 10) {
-    //     GameColor.r = action_red(TexCoord + Bottom + Right);
-    // }
-    // else if (iTime >= 10 && iTime < 20) {
-    //     GameColor.r = action_red(TexCoord + Bottom);
-    // }
-    // else if (iTime >= 20 && iTime < 30) {
-    //     GameColor.r = action_red(TexCoord + Bottom + Left);
-    // }
-    // else if (iTime >= 30 && iTime < 40) {
-    //     GameColor.r = action_red(TexCoord + Left);
-    // }
-    // else if (iTime >= 40 && iTime < 50) {
-    //     GameColor.r = action_red(TexCoord + Left + Top);
-    // }
-    // else if (iTime >= 50 && iTime < 60) {
-    //     GameColor.r = action_red(TexCoord + Top);
-    // }
-    // else if (iTime >= 60 && iTime < 70) {
-    //     GameColor.r = action_red(TexCoord + Top + Right);
-    // }
-    // else if (iTime >= 70 && iTime < 80) {
-    //     GameColor.r = action_red(TexCoord + Right);
-    // }
-    // else if (iTime >= 80 && iTime < 90) {
-    //     GameColor.r = action_red(TexCoord + Left);
-    // }
-    // else if (iTime >= 90 && iTime < 100) {
-    //     GameColor.r = action_red(TexCoord + Left + Top);
-    // }
-
-
-    //GameColor.g = action_green();
     GameColor.g = strat2(GREEN);
-    GameColor.r = strat2(RED);
+    GameColor.r = strat3(RED);
 
     // blue lighting where battle takes place
     if (GameColor.r > 0.01 && GameColor.g > 0.01){

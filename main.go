@@ -65,6 +65,10 @@ var (
 	ActionDrawMode   int32   = DRAW_MODE_ADD
 	ActionDrawA      float32 = 0.0
 
+	ZOOM        = 1.0
+	X_TRANSLATE = 0.0
+	Y_TRANSLATE = 0.0
+
 	KeyWActive bool = false
 	KeyAActive bool = false
 	KeyRActive bool = false
@@ -223,7 +227,6 @@ func UpdateGame() {
 	data.Program.SetInt("iTime", int32(now.Unix()%100)/2)
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
-	data.Program.SetFloat("window_height", float32(Height))
 	data.Program.SetFloatVector2("Actor1", &ActorDotPos)
 	data.Program.SetFloat("Actor1Radius", ActorDotRadius)
 
@@ -313,10 +316,13 @@ func Draw() {
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Set uniforms
-	data.Program.SetFloat("window_width", float32(Width))
-	data.Program.SetFloat("window_height", float32(Height))
 	data.Program.SetInt("MODE", ActionDrawMode)
 	data.Program.SetFloat("A", ActionDrawA)
+	data.Program.SetFloat("window_width", float32(Width))
+	data.Program.SetFloat("window_height", float32(Height))
+	data.Program.SetFloat("ZOOM", float32(ZOOM))
+	data.Program.SetFloat("Y_TRANSLATE", float32(Y_TRANSLATE))
+	data.Program.SetFloat("X_TRANSLATE", float32(X_TRANSLATE))
 
 	// Draw Game state to screen
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))

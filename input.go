@@ -52,38 +52,53 @@ func SetKeyHandling(window *glfw.Window) {
 		}
 
 		// Handle keystrokes
+		translate_step_size := 0.01
+		zoom_step_size := 0.01
+
 		switch char {
 		case "65": // space
 			if action == Down || action == Repeat {
 				ActionReset = true
 			}
+		case "110": // home
+			if action == Down || action == Repeat {
+				ZOOM -= zoom_step_size
+			}
+		case "115": // end
+			if action == Down || action == Repeat {
+				ZOOM += zoom_step_size
+			}
 		case "116": // arrow down
 			if action == Down || action == Repeat {
-				ActionDrawA -= 0.1
-				if ActionDrawA < 0.0 {
-					ActionDrawA = 0.0
-				}
+				Y_TRANSLATE -= translate_step_size
+				// ActionDrawA -= 0.1
+				// if ActionDrawA < 0.0 {
+				// 	ActionDrawA = 0.0
+				// }
 			}
 		case "111": // arrow up
 			if action == Down || action == Repeat {
-				ActionDrawA += 0.1
-				if ActionDrawA > 1.0 {
-					ActionDrawA = 1.0
-				}
+				Y_TRANSLATE += translate_step_size
+				// ActionDrawA += 0.1
+				// if ActionDrawA > 1.0 {
+				// 	ActionDrawA = 1.0
+				// }
 			}
 		case "113": // arrow left
 			if action == Down || action == Repeat {
-				ActorDotRadius -= 0.002
-				if ActorDotRadius < 0.0 {
-					ActorDotRadius = 0.0
-				}
+				X_TRANSLATE -= translate_step_size
+				// ActorDotRadius -= 0.002
+				// if ActorDotRadius < 0.0 {
+				// 	ActorDotRadius = 0.0
+				// }
 			}
 		case "114": // arrow right
 			if action == Down || action == Repeat {
-				ActorDotRadius += 0.002
-				if ActorDotRadius > 2.0 {
-					ActorDotRadius = 2.0
-				}
+				X_TRANSLATE += translate_step_size
+				// ActorDotRadius += 0.002
+				// if ActorDotRadius > 2.0 {
+				// 	ActorDotRadius = 2.0
+				// }
 			}
 		case "p":
 			if action == Down {
@@ -133,7 +148,6 @@ func SetKeyHandling(window *glfw.Window) {
 			if action == Repeat {
 				//fmt.Println("action, char, key, scancode:", action, char, key, scancode)
 			}
-
 		}
 
 		fmt.Println("action, char, key, scancode:", action, char, key, scancode)

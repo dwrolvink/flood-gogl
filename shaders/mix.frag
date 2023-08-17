@@ -9,6 +9,13 @@ uniform sampler2D PfSmellGreenTexture;
 uniform int MODE;
 uniform float A;
 
+uniform float window_width;
+uniform float window_height;
+
+uniform float ZOOM;
+uniform float Y_TRANSLATE;
+uniform float X_TRANSLATE;
+
 void main() {
     // consts
     int DRAW_MODE_ADD = 1;
@@ -16,9 +23,11 @@ void main() {
     int DRAW_MODE_SMELL = 3;
     
     // get colors
-    vec4 color_smell_red = texture(PfSmellRedTexture, TexCoord);
-    vec4 color_smell_green = texture(PfSmellGreenTexture, TexCoord);
-    vec4 color_game = texture(PfGameTexture, TexCoord);
+    vec2 transl = vec2(X_TRANSLATE, Y_TRANSLATE);
+
+    vec4 color_smell_red = texture(PfSmellRedTexture, (TexCoord + transl)  * ZOOM );
+    vec4 color_smell_green = texture(PfSmellGreenTexture, (TexCoord + transl)  * ZOOM);
+    vec4 color_game = texture(PfGameTexture, (TexCoord + transl)  * ZOOM);
 
     // Just add together
     if (MODE == DRAW_MODE_ADD){
