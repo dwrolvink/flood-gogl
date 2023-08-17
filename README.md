@@ -42,6 +42,7 @@ Alternatively, you can pass the setting as a first argument:
 ```bash
 GO111MODULE=off go get github.com/go-gl/gl/v4.5-core/gl
 GO111MODULE=off go get github.com/go-gl/glfw/v3.2/glfw
+
 ```
 
 Installation
@@ -55,6 +56,7 @@ go get github.com/go-gl/gl/v4.1-core/gl
 go get github.com/go-gl/glfw/v3.2/glfw
 go get github.com/dwrolvink/gogl
 go get gopkg.in/yaml.v3
+go get golang.org/x/exp/constraints
 ```
 
 Run

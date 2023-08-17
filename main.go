@@ -68,6 +68,7 @@ var (
 	ZOOM        = 1.0
 	X_TRANSLATE = 0.0
 	Y_TRANSLATE = 0.0
+	SHOW_HUD    = 1
 
 	KeyWActive bool = false
 	KeyAActive bool = false
@@ -214,7 +215,8 @@ func UpdateGame() {
 
 	// Bind correct textures
 	data.Program.SetInt("PfGameTexture", int32(0))
-	data.Program.SetInt("PfSmellTexture", int32(1))
+	data.Program.SetInt("PfSmellRedTexture", int32(1))
+	data.Program.SetInt("PfSmellGreenTexture", int32(2))
 	gl.ActiveTexture(gl.TEXTURE0 + 0)                            // Game state
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))       //
 	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
@@ -323,6 +325,7 @@ func Draw() {
 	data.Program.SetFloat("ZOOM", float32(ZOOM))
 	data.Program.SetFloat("Y_TRANSLATE", float32(Y_TRANSLATE))
 	data.Program.SetFloat("X_TRANSLATE", float32(X_TRANSLATE))
+	data.Program.SetInt("SHOW_HUD", int32(SHOW_HUD))
 
 	// Draw Game state to screen
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))

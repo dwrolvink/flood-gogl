@@ -3,7 +3,27 @@ package main
 import (
 	"image"
 	"os"
+
+	"golang.org/x/exp/constraints"
 )
+
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+func max[T Number](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func min[T Number](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 // Easy way to create a quad with a certain size and offset
 func CreateQuadVertexMatrix(size float32, x_offset float32, y_offset float32) []float32 {

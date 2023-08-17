@@ -52,54 +52,69 @@ func SetKeyHandling(window *glfw.Window) {
 		}
 
 		// Handle keystrokes
-		translate_step_size := 0.01
-		zoom_step_size := 0.01
+		translate_step_size := 0.02
+		translate_mult := 1.0
+		zoom_step_size := 0.02
 
 		switch char {
 		case "65": // space
 			if action == Down || action == Repeat {
 				ActionReset = true
 			}
+		// ZOOM
+		// -----------------------------------------------
 		case "110": // home
 			if action == Down || action == Repeat {
-				ZOOM -= zoom_step_size
+				ZOOM = max(ZOOM-zoom_step_size, 0.0)
+				if action == Repeat {
+					ZOOM -= zoom_step_size // speed up
+				}
 			}
 		case "115": // end
 			if action == Down || action == Repeat {
-				ZOOM += zoom_step_size
+				ZOOM = min(ZOOM+zoom_step_size, 2.0)
+				if action == Repeat {
+					ZOOM += zoom_step_size // speed up
+				}
 			}
+		// PAN
+		// -----------------------------------------------
 		case "116": // arrow down
 			if action == Down || action == Repeat {
 				Y_TRANSLATE -= translate_step_size
-				// ActionDrawA -= 0.1
-				// if ActionDrawA < 0.0 {
-				// 	ActionDrawA = 0.0
-				// }
+				if action == Repeat {
+					Y_TRANSLATE -= translate_mult * translate_step_size // speed up
+				}
 			}
 		case "111": // arrow up
 			if action == Down || action == Repeat {
 				Y_TRANSLATE += translate_step_size
-				// ActionDrawA += 0.1
-				// if ActionDrawA > 1.0 {
-				// 	ActionDrawA = 1.0
-				// }
+				if action == Repeat {
+					Y_TRANSLATE += translate_mult * translate_step_size
+				}
 			}
 		case "113": // arrow left
 			if action == Down || action == Repeat {
 				X_TRANSLATE -= translate_step_size
-				// ActorDotRadius -= 0.002
-				// if ActorDotRadius < 0.0 {
-				// 	ActorDotRadius = 0.0
-				// }
+				if action == Repeat {
+					X_TRANSLATE -= translate_mult * translate_step_size
+				}
 			}
 		case "114": // arrow right
 			if action == Down || action == Repeat {
 				X_TRANSLATE += translate_step_size
-				// ActorDotRadius += 0.002
-				// if ActorDotRadius > 2.0 {
-				// 	ActorDotRadius = 2.0
-				// }
+				if action == Repeat {
+					X_TRANSLATE += translate_mult * translate_step_size
+				}
 			}
+		// TOGGLES
+		// -----------------------------------------------
+		case "h":
+			if action == Down {
+				SHOW_HUD = 1 - SHOW_HUD
+			}
+		// PRINT/RECORD
+		// -----------------------------------------------
 		case "p":
 			if action == Down {
 				ActionPrtsc = true
