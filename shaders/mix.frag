@@ -35,7 +35,7 @@ void main() {
 
     // Just add together
     if (MODE == DRAW_MODE_ADD){
-        FragColor = 0.8 * (color_smell_red + color_smell_green) + color_game;
+        FragColor = 0.5 * (color_smell_red + color_smell_green) + color_game;
     }
     // Mix smell and gamestate by ratio
     else if (MODE == DRAW_MODE_MERGE){
