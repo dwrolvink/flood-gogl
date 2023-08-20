@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -50,6 +51,14 @@ func CreateImage(number int, mode int) {
 		folder = "recording/temp/"
 	}
 
+	// Create folder
+	if _, err := os.Stat(folder); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(folder, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	// Create empty image to receive the pixel data
 	img := image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{width, height}})
 
@@ -71,7 +80,11 @@ func CreateImage(number int, mode int) {
 
 	// Terminal feedback
 	if mode == RECORDING_GIF {
-		fmt.Println("Recording frame", tick, "of", record_length)
+		rl := "?"
+		if record_length > 0 {
+			rl = fmt.Sprint(record_length)
+		}
+		fmt.Println("Recording frame", tick-record_start-1, "of", rl)
 	} else if mode == RECORDING_PRTSC {
 		fmt.Println("Created " + folder + filename)
 	}
@@ -85,7 +98,7 @@ func CompileGif() {
 
 	// run script to compile output and cleanup separate images
 	filename := time.Now().Unix()
-	cmd, err := exec.Command("/bin/sh", "scripts/make_gif.sh", fmt.Sprint(filename), fmt.Sprint(fps)).Output()
+	cmd, err := exec.Command("/bin/sh", "scripts/make_gif.sh", fmt.Sprint(filename), fmt.Sprint(fps), fmt.Sprint(record_start)).Output()
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"os"
+	"time"
 
 	"golang.org/x/exp/constraints"
 )
@@ -23,6 +24,10 @@ func min[T Number](a, b T) T {
 		return a
 	}
 	return b
+}
+
+func makeTimestamp() int64 {
+	return time.Now().UnixMilli()
 }
 
 // Easy way to create a quad with a certain size and offset

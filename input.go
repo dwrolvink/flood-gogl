@@ -81,30 +81,30 @@ func SetKeyHandling(window *glfw.Window) {
 		// -----------------------------------------------
 		case "116": // arrow down
 			if action == Down || action == Repeat {
-				Y_TRANSLATE -= translate_step_size
+				Y_TRANSLATE -= max(0.002, ZOOM*translate_step_size)
 				if action == Repeat {
-					Y_TRANSLATE -= translate_mult * translate_step_size // speed up
+					Y_TRANSLATE -= max(0.002, ZOOM*translate_mult*translate_step_size) // speed up
 				}
 			}
 		case "111": // arrow up
 			if action == Down || action == Repeat {
-				Y_TRANSLATE += translate_step_size
+				Y_TRANSLATE += max(0.002, ZOOM*translate_step_size)
 				if action == Repeat {
-					Y_TRANSLATE += translate_mult * translate_step_size
+					Y_TRANSLATE += max(0.002, ZOOM*translate_mult*translate_step_size)
 				}
 			}
 		case "113": // arrow left
 			if action == Down || action == Repeat {
-				X_TRANSLATE -= translate_step_size
+				X_TRANSLATE -= max(0.002, ZOOM*translate_step_size)
 				if action == Repeat {
-					X_TRANSLATE -= translate_mult * translate_step_size
+					X_TRANSLATE -= max(0.002, ZOOM*translate_mult*translate_step_size)
 				}
 			}
 		case "114": // arrow right
 			if action == Down || action == Repeat {
-				X_TRANSLATE += translate_step_size
+				X_TRANSLATE += max(0.002, ZOOM*translate_step_size)
 				if action == Repeat {
-					X_TRANSLATE += translate_mult * translate_step_size
+					X_TRANSLATE += max(0.002, ZOOM*translate_mult*translate_step_size)
 				}
 			}
 		// TOGGLES
@@ -118,6 +118,23 @@ func SetKeyHandling(window *glfw.Window) {
 		case "p":
 			if action == Down {
 				ActionPrtsc = true
+			}
+		case "r":
+			if action == Down {
+				if ActionRecord {
+					// end recording
+					record_stop = tick
+				} else {
+					ActionRecord = true
+					record_start = tick
+					if record_length > 0 {
+						record_stop = tick + record_length
+					} else {
+						record_stop = 0.0
+					}
+				}
+				fmt.Println("record, record_start, record_stop", ActionRecord, record_start, record_stop)
+
 			}
 		case "s":
 			if action == Down || action == Repeat {

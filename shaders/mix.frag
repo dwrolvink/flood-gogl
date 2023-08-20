@@ -6,6 +6,7 @@ uniform sampler2D PfGameTexture;
 uniform sampler2D PfSmellRedTexture;
 uniform sampler2D PfSmellGreenTexture;
 
+uniform int TIMESTAMP;
 uniform int MODE;
 uniform float A;
 
@@ -17,6 +18,10 @@ uniform float Y_TRANSLATE;
 uniform float X_TRANSLATE;
 
 uniform int SHOW_HUD;
+
+int modulo(int a, int b) {
+    return a - (b * int(a/b));
+}
 
 void main() {
     // consts
@@ -32,6 +37,18 @@ void main() {
     vec4 color_smell_red = texture(PfSmellRedTexture, FrameCoords);
     vec4 color_smell_green = texture(PfSmellGreenTexture, FrameCoords);
     vec4 color_game = texture(PfGameTexture, FrameCoords);
+
+    // debug
+    int m = 4;
+    int ts_m4 = modulo(TIMESTAMP, 4);
+    if (FrameCoords.x <= (window_height / window_width) * ts_m4/40. 
+     && FrameCoords.x > (window_height / window_width) * (ts_m4 - 1)/40. &&
+        FrameCoords.y <= 1./40.
+    ) {
+        FragColor = vec4(0.,1.,1.0,1.0);
+        return;
+    }
+
 
     // Just add together
     if (MODE == DRAW_MODE_ADD){

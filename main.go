@@ -32,11 +32,13 @@ var (
 	window      = gogl.Init(WindowTitle, Width, Height) // Init Window, OpenGL
 
 	// Helper variables
-	tick          float32 = 0.0                      // ticks up every game loop cycle
-	fps           int     = 50                       //
-	delay_ms      int64   = 5                        // handles frame rate
-	record        bool    = false                    // whether to record the screen.
-	record_length float32 = float32(1.0*(fps)) * 0.5 // After how many ticks to stop recording (and close the program)
+	tick          float32 = 0.0   // ticks up every game loop cycle
+	fps           int     = 50    //
+	delay_ms      int64   = 5     // handles frame rate
+	record        bool    = false // whether to record the screen.
+	record_length float32 = 0.0   //float32(2.0*(fps)) * 0.5 // After how many ticks to stop recording (and close the program)
+	record_start  float32 = 0.0
+	record_stop   float32 = 0.0
 
 	// Shader programs
 	datalist       = SetData()   // Init data
@@ -65,10 +67,11 @@ var (
 	ActionDrawMode   int32   = DRAW_MODE_ADD
 	ActionDrawA      float32 = 0.0
 
-	ZOOM        = 1.0
-	X_TRANSLATE = 0.0
-	Y_TRANSLATE = 0.0
-	SHOW_HUD    = 1
+	ZOOM              = 1.0
+	X_TRANSLATE       = 0.0
+	Y_TRANSLATE       = 0.0
+	SHOW_HUD          = 1
+	TIMESTAMP   int32 = 0
 
 	KeyWActive bool = false
 	KeyAActive bool = false
@@ -154,6 +157,9 @@ func main() {
 			}
 		}
 
+		// get new timestamp
+		TIMESTAMP = int32(makeTimestamp())
+
 		// Each framebuffer gets updated in a recursive manner
 		// (Each fbo is the input of a calculation and the output of that same calculation)
 		UpdateGame()
@@ -181,7 +187,7 @@ func main() {
 		}
 		if ActionRecord {
 			CreateImage(int(tick), RECORDING_GIF)
-			if tick > record_length {
+			if record_stop != 0.0 && tick > record_stop {
 				ActionRecord = false
 				CompileGif()
 			}
@@ -201,8 +207,6 @@ func main() {
 func UpdateGame() {
 	// Set to overwrite whatever is on the texture (no mixing)
 	gl.Disable(gl.BLEND)
-
-	now := time.Now()
 
 	// Update game
 	// ---------------------------------------------
@@ -226,11 +230,11 @@ func UpdateGame() {
 
 	// Set uniforms
 	// fmt.Println(int32(now.Unix()%100) / 2)
-	data.Program.SetInt("iTime", int32(now.Unix()%100)/2)
 	data.Program.SetFloat("window_width", float32(Width))
 	data.Program.SetFloat("window_height", float32(Height))
 	data.Program.SetFloatVector2("Actor1", &ActorDotPos)
 	data.Program.SetFloat("Actor1Radius", ActorDotRadius)
+	data.Program.SetInt("TIMESTAMP", int32(TIMESTAMP))
 
 	// Iterate Game state
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
@@ -318,6 +322,7 @@ func Draw() {
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
 
 	// Set uniforms
+	data.Program.SetInt("TIMESTAMP", int32(TIMESTAMP))
 	data.Program.SetInt("MODE", ActionDrawMode)
 	data.Program.SetFloat("A", ActionDrawA)
 	data.Program.SetFloat("window_width", float32(Width))

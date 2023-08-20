@@ -45,3 +45,11 @@ bool equals(vec2 pos1, vec2 pos2) {
     }
     return true;
 }
+
+// float max5 (float v0, float v1, float v2, float v3, float v4) {
+//   return max( max( max( max(v0, v1), v2), v3), v4);
+// }
+
+// float rand(vec2 co){
+//     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+// }

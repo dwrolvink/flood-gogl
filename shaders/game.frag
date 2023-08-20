@@ -7,14 +7,16 @@ uniform sampler2D PfGameTexture;
 uniform sampler2D PfSmellRedTexture; 
 uniform sampler2D PfSmellGreenTexture; 
 
-uniform int iTime;
 uniform float window_width;
 uniform float window_height;
 
 uniform vec2 Actor1;
 uniform float Actor1Radius;
+uniform int TIMESTAMP;
 
 vec2 Resolution = vec2(window_width, window_height);
+
+int MOD4;
 
 int RED = 0;
 int GREEN = 1;
@@ -30,13 +32,9 @@ vec2 Right = vec2(1.0, 0.0);
 
 
 // helper functions
-// float max5 (float v0, float v1, float v2, float v3, float v4) {
-//   return max( max( max( max(v0, v1), v2), v3), v4);
-// }
-
-// float rand(vec2 co){
-//     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
-// }
+int modulo(int a, int b) {
+    return a - (b * int(a/b));
+}
 
 vec2 uv_to_coords(vec2 uv) {
     vec2 coords = (TexCoord * Resolution);
@@ -57,11 +55,12 @@ vec4 get_color_by_coord(sampler2D tex, vec2 coords) {
 
 
 // game logic
-vec2 pick_target (int c, vec2 coords) {
+vec2 pick_target (int self, vec2 coords) {
+    int s = self;
     vec4 value = get_color_by_coord(PfGameTexture, coords);
 
     // pick no target if no red in cell
-    if (value[c] < 0.5) {
+    if (value[s] < 0.5) {
         return coords;
     }
 
@@ -72,180 +71,6 @@ vec2 pick_target (int c, vec2 coords) {
 
     vec2 target_coords = coords;
     float min_value = 1000.0;
-
-    if (value_top[c] < min_value) {
-        target_coords = coords + Top;
-        min_value = value_top[c];
-    }
-    if (value_bottom[c] < min_value) {
-        target_coords = coords + Bottom;
-        min_value = value_bottom[c];
-    }
-    if (value_left[c] < min_value) {
-        target_coords = coords + Left;
-        min_value = value_left[c];
-    }
-    if (value_right[c] < min_value) {
-        target_coords = coords + Right;
-        min_value = value_right[c];
-    }
-
-    return target_coords;
-}
-
-
-float strat2 (int c) {
-    vec2 uv = TexCoord;
-    vec2 coords = uv_to_coords(uv);
-
-    vec4 cell = get_color_by_coord(PfGameTexture, coords);
-    float g = 1.01;
-    float a = 0.5;
-
-    vec2 test;
-    // send
-    test = pick_target(c, coords);
-    if (test.x != coords.x || test.y != coords.y) {
-        cell[c] = max(0.0, cell[c] - a);
-    }
-
-    // receive
-    test = pick_target(c, coords + Top);
-    if (test.x == coords.x && test.y == coords.y) {
-        cell[c] = min(1.0, cell[c] + a);
-    }
-    test = pick_target(c, coords + Bottom);
-    if (test.x == coords.x && test.y == coords.y) {
-        cell[c] = min(1.0, cell[c] + a);
-    }
-    test = pick_target(c, coords + Left);
-    if (test.x == coords.x && test.y == coords.y) {
-        cell[c] = min(1.0, cell[c] + a);
-    }
-    test = pick_target(c, coords + Right);
-    if (test.x == coords.x && test.y == coords.y) {
-        cell[c] = min(1.0, cell[c] + a);
-    }
-
-
-    // return
-    return cell[c] * g;
-}
-
-
-vec2 pick_target2 (int self, int enemy, vec2 coords) {
-    int s = self;
-    int e = enemy;
-
-    vec4 value = get_color_by_coord(PfGameTexture, coords);
-
-    // pick no target if no red in cell
-    if (value[s] < 0.5) {
-        return coords;
-    }
-
-    // -- get values
-    vec4 value_top = get_color_by_coord(PfGameTexture, coords + Top);
-    vec4 value_bottom = get_color_by_coord(PfGameTexture, coords + Bottom);
-    vec4 value_left = get_color_by_coord(PfGameTexture, coords + Left);
-    vec4 value_right = get_color_by_coord(PfGameTexture, coords + Right);
-
-
-    vec4 es_top; vec4 es_bottom; vec4 es_left; vec4 es_right;
-    if (enemy == GREEN) {
-        es_top = get_color_by_coord(PfSmellGreenTexture, coords + Top);
-        es_bottom = get_color_by_coord(PfSmellGreenTexture, coords + Bottom);
-        es_left = get_color_by_coord(PfSmellGreenTexture, coords + Left);
-        es_right = get_color_by_coord(PfSmellGreenTexture, coords + Right);
-    }
-    if (enemy == RED) {
-        es_top = get_color_by_coord(PfSmellRedTexture, coords + Top);
-        es_bottom = get_color_by_coord(PfSmellRedTexture, coords + Bottom);
-        es_left = get_color_by_coord(PfSmellRedTexture, coords + Left);
-        es_right = get_color_by_coord(PfSmellRedTexture, coords + Right);
-    }
-
-
-    // -- types
-    vec2 target_coords;
-    float min_value;
-    float max_value;
-
-
-
-    // -- get empty cell
-    if (value_left[s] == 0.0 && value_left[e] == 0.0) {
-        return coords + Left;
-    }
-    if (value_right[s] == 0.0 && value_right[e] == 0.0) {
-        return coords + Right;
-    }
-    if (value_top[s] == 0.0 && value_top[e] == 0.0) {
-        return coords + Top;
-    }
-    if (value_bottom[s] == 0.0 && value_bottom[e] == 0.0) {
-        return coords + Bottom;
-    }
-
-
-    // -- get cell with strongest enemy cell value
-    target_coords = coords;
-    max_value = 0.0;
-
-
-    if (value_top[e] > max_value) {
-        target_coords = coords + Top;
-        max_value = value_top[e];
-    }
-    if (value_bottom[e] > max_value) {
-        target_coords = coords + Bottom;
-        max_value = value_bottom[e];
-    }
-    if (value_left[e] > max_value) {
-        target_coords = coords + Left;
-        max_value = value_left[e];
-    }
-    if (value_right[e] > max_value) {
-        target_coords = coords + Right;
-        max_value = value_right[e];
-    }
-
-    if (max_value > 0.0) {
-        return target_coords;
-    }
-
-    // -- get cell with strongest enemy cell smell
-    target_coords = coords;
-    max_value = 0.0;
-
-
-    if (es_top[e] > max_value) {
-        target_coords = coords + Top;
-        max_value = es_top[e];
-    }
-    if (es_bottom[e] > max_value) {
-        target_coords = coords + Bottom;
-        max_value = es_bottom[e];
-    }
-    if (es_left[e] > max_value) {
-        target_coords = coords + Left;
-        max_value = es_left[e];
-    }
-    if (es_right[e] > max_value) {
-        target_coords = coords + Right;
-        max_value = es_right[e];
-    }
-
-    if (max_value > 0.0) {
-        return target_coords;
-    }
-
-
-
-
-    // -- get cell with lowest own value
-    target_coords = coords;
-    min_value = 1000.0;
 
     if (value_top[s] < min_value) {
         target_coords = coords + Top;
@@ -267,7 +92,35 @@ vec2 pick_target2 (int self, int enemy, vec2 coords) {
     return target_coords;
 }
 
-float strat3 (int self, int enemy) {
+
+vec2 pick_target_mod (int self, vec2 coords) {
+    int s = self;
+    vec4 value = get_color_by_coord(PfGameTexture, coords);
+    int m = modulo(TIMESTAMP, 4);
+
+    // pick no target if no red in cell
+    if (value[s] < 0.5) {
+        return coords;
+    }
+
+    if (m == 0) {
+        return coords + Top;
+    }
+    if (m == 1) {
+        return coords + Bottom;
+    }
+    if (m == 2) {
+        return coords + Left;
+    }
+    if (m == 3) {
+        return coords + Right;
+    }
+
+    return coords;
+}
+
+
+float strat2 (int self, int enemy) {
     int s = self;
     int e = enemy;
 
@@ -276,40 +129,250 @@ float strat3 (int self, int enemy) {
 
     vec4 cell = get_color_by_coord(PfGameTexture, coords);
     float g = 1.01;
-    float r = 0.5;
-    float a = 0.001;
+    float a = 0.5;
 
     vec2 test;
     // send
-    test = pick_target2(self, enemy, coords);
+    test = pick_target_mod(s, coords);
     if (test.x != coords.x || test.y != coords.y) {
-        cell[s] = max(0.0, cell[s] - r);
+        cell[s] = max(0.0, cell[s] - a);
+    }
+
+    // receive
+    test = pick_target_mod(s, coords + Top);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[s] = min(1.0, cell[s] + a);
+    }
+    test = pick_target_mod(s, coords + Bottom);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[s] = min(1.0, cell[s] + a);
+    }
+    test = pick_target_mod(s, coords + Left);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[s] = min(1.0, cell[s] + a);
+    }
+    test = pick_target_mod(s, coords + Right);
+    if (test.x == coords.x && test.y == coords.y) {
+        cell[s] = min(1.0, cell[s] + a);
+    }
+
+
+    // return
+    return cell[s] * g;
+}
+
+vec3 package(vec2 coords, float amount) {
+    // amount to send to the coordinate
+    return vec3(coords.x, coords.y, amount);
+}
+vec2 get_coords_from_package(vec3 package){
+    return vec2(package.x, package.y);
+}
+
+vec3 pick_target2 (int self, int enemy, vec2 coords) {
+    int s = self;
+    int e = enemy;
+
+    vec4 value = get_color_by_coord(PfGameTexture, coords);
+
+    float restitution = 0.1;                            // how much to keep in the current cell
+    float min_send = 1.0 - restitution;                 // don't send too small values, as rounding errors will cause loss
+    float send = max(0.0, value[s] - restitution);      // how much can be sent by this cell
+
+    if (send < min_send) {                              // don't send too small values, as rounding errors will cause loss
+        return package(coords, 0.0);
+    }
+
+    MOD4 = modulo(TIMESTAMP, 4);
+
+
+    // -- get values in random order
+    int index_0 = modulo(MOD4 + 0, 4);
+    int index_1 = modulo(MOD4 + 1, 4);
+    int index_2 = modulo(MOD4 + 2, 4);
+    int index_3 = modulo(MOD4 + 3, 4);
+
+    vec2 icoords[4];
+    icoords[index_0] = coords + Top;
+    icoords[index_1] = coords + Bottom;
+    icoords[index_2] = coords + Left;
+    icoords[index_3] = coords + Right;
+
+    vec4 values[4];
+    values[index_0] = get_color_by_coord(PfGameTexture, coords + Top);
+    values[index_1] = get_color_by_coord(PfGameTexture, coords + Bottom);
+    values[index_2] = get_color_by_coord(PfGameTexture, coords + Left);
+    values[index_3] = get_color_by_coord(PfGameTexture, coords + Right);
+
+
+    // -- types
+    vec2 target_coords;
+    float min_value;
+    float max_value;
+
+
+    // -- get empty cell
+    if (values[0][s] <= 0.01 && values[0][e] == 0.0) {
+        return package(icoords[0], send);
+    }
+    if (values[1][s] <= 0.01 && values[1][e] == 0.0) {
+        return package(icoords[1], send);
+    }
+    if (values[2][s] <= 0.01 && values[2][e] == 0.0) {
+        return package(icoords[2], send);
+    }
+    if (values[3][s] <= 0.01 && values[3][e] == 0.0) {
+        return package(icoords[3], send);
+    }
+
+
+    // // -- get cell with strongest enemy cell value
+    target_coords = coords;
+    max_value = 0.0;
+
+    if (values[0][e] > max_value) {
+        target_coords = icoords[0];
+        max_value = values[0][e];
+    }
+    if (values[1][e] > max_value) {
+        target_coords = icoords[1];
+        max_value = values[1][e];
+    }
+    if (values[2][e] > max_value) {
+        target_coords = icoords[2];
+        max_value = values[2][e];
+    }
+    if (values[3][e] > max_value) {
+        target_coords = icoords[3];
+        max_value = values[3][e];
+    } 
+
+    if (max_value > 0.0) {
+        return package(target_coords, send);
+    }
+
+    // get smell values
+    vec4 es_top; vec4 es_bottom; vec4 es_left; vec4 es_right;
+    vec4 enemy_smell[4];
+    if (enemy == GREEN) {
+        enemy_smell[index_0] = get_color_by_coord(PfSmellGreenTexture, icoords[index_0]);
+        enemy_smell[index_1] = get_color_by_coord(PfSmellGreenTexture, icoords[index_1]);
+        enemy_smell[index_2] = get_color_by_coord(PfSmellGreenTexture, icoords[index_2]);
+        enemy_smell[index_3] = get_color_by_coord(PfSmellGreenTexture, icoords[index_3]);
+    }
+    if (enemy == RED) {
+        enemy_smell[index_0] = get_color_by_coord(PfSmellRedTexture, icoords[index_0]);
+        enemy_smell[index_1] = get_color_by_coord(PfSmellRedTexture, icoords[index_1]);
+        enemy_smell[index_2] = get_color_by_coord(PfSmellRedTexture, icoords[index_2]);
+        enemy_smell[index_3] = get_color_by_coord(PfSmellRedTexture, icoords[index_3]);
+    }
+
+    // // -- get cell with strongest enemy cell smell
+    target_coords = coords;
+    max_value = 0.0;
+
+    if (enemy_smell[0][e] > max_value) {
+        target_coords = icoords[0];
+        max_value = enemy_smell[0][e];
+    }
+    if (enemy_smell[1][e] > max_value) {
+        target_coords = icoords[1];
+        max_value = enemy_smell[1][e];
+    }
+    if (enemy_smell[2][e] > max_value) {
+        target_coords = icoords[2];
+        max_value = enemy_smell[2][e];
+    }
+    if (enemy_smell[3][e] > max_value) {
+        target_coords = icoords[3];
+        max_value = enemy_smell[3][e];
+    }    
+
+    if (max_value > 0.0) {
+        return package(target_coords, send);
+    }
+
+    return package(coords, 0.0);
+
+    // // -- get cell with highest own value
+    // target_coords = coords;
+    // max_value = 0.0;
+
+    // if (value_top[s] > max_value) {
+    //     target_coords = coords + Top;
+    //     max_value = value_top[s];
+    // }
+    // if (value_bottom[s] > max_value) {
+    //     target_coords = coords + Bottom;
+    //     max_value = value_bottom[s];
+    // }
+    // if (value_left[s] > max_value) {
+    //     target_coords = coords + Left;
+    //     max_value = value_left[s];
+    // }
+    // if (value_right[s] > max_value) {
+    //     target_coords = coords + Right;
+    //     max_value = value_right[s];
+    // }
+
+
+    // return target_coords;
+}
+
+float strat3 (int self, int enemy) {
+    int s = self;
+    int e = enemy;
+
+    vec2 uv = TexCoord;
+    vec2 coords = uv_to_coords(uv);
+    vec4 cell = get_color_by_coord(PfGameTexture, coords);
+
+
+    // growth multiplier
+    float g = 1.01;
+
+    // growth adder
+    float a = 0.001;
+
+    // amount to keep in own cell, and amount to be sent to other cells
+    float restitution = 0.2;
+    float max_send = 1.0 - restitution;
+
+
+    vec3 test;
+    vec2 test_coords;
+    float test_val;
+    // send
+    if (cell[s] > restitution) {
+        test = pick_target2(self, enemy, coords);
+        if (test.x != coords.x || test.y != coords.y) {
+            cell[s] = min(restitution, cell[s] - test.z);
+        }
     }
 
     // receive
     test = pick_target2(self, enemy, coords + Top);
     if (test.x == coords.x && test.y == coords.y) {
-        cell[s] = min(1.0, cell[s] + r);
+        cell[s] = min(1.0, cell[s] + test.z); // bug: can lead to loss of amount
     }
     test = pick_target2(self, enemy, coords + Bottom);
     if (test.x == coords.x && test.y == coords.y) {
-        cell[s] = min(1.0, cell[s] + r);
+        cell[s] = min(1.0, cell[s] + test.z);
     }
     test = pick_target2(self, enemy, coords + Left);
     if (test.x == coords.x && test.y == coords.y) {
-        cell[s] = min(1.0, cell[s] + r);
+        cell[s] = min(1.0, cell[s] + test.z);
     }
     test = pick_target2(self, enemy, coords + Right);
     if (test.x == coords.x && test.y == coords.y) {
-        cell[s] = min(1.0, cell[s] + r);
+        cell[s] = min(1.0, cell[s] + test.z);
     }
-
 
     // return
     if (cell[s] > 0.0) {
         return max(0.0, min(1.0, cell[s] * g + a));
     }
-    return max(0.0, min(1.0, cell[s] * g));
+    return 0.0;
 }
 
 
@@ -329,8 +392,17 @@ void main() {
 
     float buff_r = GameColor.r;
     float buff_g = GameColor.g;
-    GameColor.g = max(0.0, GameColor.g - (0.5 * buff_r));
-    GameColor.r = max(0.0, GameColor.r - (0.5 * buff_g));
+
+    if (GameColor.r > GameColor.g) {
+        GameColor.g = 0.0;
+    }
+    else if (GameColor.g > GameColor.r) {
+        GameColor.r = 0.0;
+    }
+    else {
+        GameColor.g = max(0.0, GameColor.g - (0.1 * buff_r));
+        GameColor.r = max(0.0, GameColor.r - (0.1 * buff_g));
+    }
     
 
 
