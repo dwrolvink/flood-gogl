@@ -5,6 +5,7 @@ in vec2 TexCoord;
 uniform sampler2D PfGameTexture;
 uniform sampler2D PfSmellRedTexture;
 uniform sampler2D PfSmellGreenTexture;
+uniform sampler2D PfAdditionalTexture;
 
 uniform int TIMESTAMP;
 uniform int MODE;
@@ -28,7 +29,7 @@ void main() {
     int DRAW_MODE_ADD = 1;
     int DRAW_MODE_MERGE = 2;
     int DRAW_MODE_SMELL = 3;
-    
+
     // get colors
     vec2 zoom_transl = vec2(0.5 * ( 1 - ZOOM), 0.5 * ( 1 - ZOOM));
     vec2 transl = vec2(X_TRANSLATE, Y_TRANSLATE);
@@ -41,9 +42,9 @@ void main() {
     // debug
     int m = 4;
     int ts_m4 = modulo(TIMESTAMP, 4);
-    if (FrameCoords.x <= (window_height / window_width) * ts_m4/40. 
-     && FrameCoords.x > (window_height / window_width) * (ts_m4 - 1)/40. &&
-        FrameCoords.y <= 1./40.
+    if (TexCoord.x <= (window_height / window_width) * ts_m4/40. 
+     && TexCoord.x > (window_height / window_width) * (ts_m4 - 1)/40. &&
+        TexCoord.y <= 1./40.
     ) {
         FragColor = vec4(0.,1.,1.0,1.0);
         return;
@@ -87,5 +88,11 @@ void main() {
         if (y_d < line_height && x_d < cross_width) {
             FragColor += cross_color;
         }
+
+        // helptext
+        FragColor += texture(PfAdditionalTexture, TexCoord + vec2(0.42, 0.78));
+        return;
     }
+
+
 }

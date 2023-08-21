@@ -1,8 +1,10 @@
 Flood-gogl
 ====================
-This is an example app for the [go-gl wrapper package](https://github.com/dwrolvink/gogl/tree/main) that I'm writing as an exercise.
+Rewrite of https://github.com/dwrolvink/flood using OpenGL (go-gl & glfw).
 
-See also https://www.youtube.com/watch?v=EJz71vpNhSU&list=PLDZujg-VgQlZUy1iCqBbe5faZLMkA3g2x&index=42 for the lecture this package is based on.
+This project uses the [go-gl wrapper package](https://github.com/dwrolvink/gogl/tree/main) that I'm writing as an exercise, based on this lecture series: https://www.youtube.com/watch?v=EJz71vpNhSU&list=PLDZujg-VgQlZUy1iCqBbe5faZLMkA3g2x&index=42 
+
+
 
 Some features:
 --------------------

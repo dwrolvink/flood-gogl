@@ -21,7 +21,8 @@ const (
 	DRAW_MODE_MERGE = 2 // uniformf A is used as mix, 0=game, 1=smell
 	DRAW_MODE_SMELL = 3 // uniformf A is used as mix, 0=red, 0.5=both, 1.0=green
 
-	StartImageSrc = "assets/img/image.png" // Needs to be a png
+	StartImageSrc     = "assets/img/image.png"   // Needs to be a png
+	AdditionalTexture = "assets/img/texture.png" // Needs to be a png
 )
 
 var (
@@ -53,10 +54,12 @@ var (
 	PfGameTextureWriteID  gogl.TextureID // [test]
 	PfSmellRedTextureID   gogl.TextureID //
 	PfSmellGreenTextureID gogl.TextureID //
+	PfAdditionalTextureID gogl.TextureID //
 	FBGame                uint32         // can be used as a draw target when we don't want to draw to the screen
 	FBGameWrite           uint32         // [test]
 	FBSmellRed            uint32         // can be used as a draw target when we don't want to draw to the screen
 	FBSmellGreen          uint32         // can be used as a draw target when we don't want to draw to the screen
+	FBAdditionalTexture   uint32
 
 	// Actions. These are influenced by keystrokes
 	ActionReset              = false
@@ -95,18 +98,25 @@ func main() {
 	ParseCommandlineArgs()
 
 	// Create textures for the different frame buffers
-	PfGameTextureWriteID = NewDefaultTexture() // [test]
+	PfGameTextureWriteID = NewDefaultTexture()
 	PfGameTextureID = NewDefaultTexture()
+	PfAdditionalTextureID = NewDefaultTexture()
 
 	PfSmellRedTextureID = NewDefaultTexture()
 	PfSmellGreenTextureID = NewDefaultTexture()
 
+	// used for writing current game state during UpdateGame
 	ResetFrame(PfGameTextureWriteID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGameWrite, PfGameTextureWriteID)
 
 	// Create frame buffer for the game state
+	// Used for displaying game state to the screen
 	ResetFrame(PfGameTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGame, PfGameTextureID)
+
+	// Additional texture for HUD and other purposes
+	ResetFrame(PfAdditionalTextureID, AdditionalTexture) // texture needs to be initialized before linking to FBO
+	CreateFramebuffer(&FBAdditionalTexture, PfAdditionalTextureID)
 
 	// Create frame buffer for the red "smell" (used for green cells to know where the red cells are)
 	ResetFrame(PfSmellRedTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
@@ -315,12 +325,15 @@ func Draw() {
 	data.Program.SetInt("PfGameTexture", int32(0))
 	data.Program.SetInt("PfSmellRedTexture", int32(1))
 	data.Program.SetInt("PfSmellGreenTexture", int32(2))
+	data.Program.SetInt("PfAdditionalTexture", int32(3))
 	gl.ActiveTexture(gl.TEXTURE0 + 0)                            // Game state
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfGameTextureID))       //
 	gl.ActiveTexture(gl.TEXTURE0 + 1)                            // Smell (blurred composite of game state)
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellRedTextureID))   //
 	gl.ActiveTexture(gl.TEXTURE0 + 2)                            // Smell (blurred composite of game state)
 	gl.BindTexture(gl.TEXTURE_2D, uint32(PfSmellGreenTextureID)) //
+	gl.ActiveTexture(gl.TEXTURE0 + 3)                            // Smell (blurred composite of game state)
+	gl.BindTexture(gl.TEXTURE_2D, uint32(PfAdditionalTextureID)) //
 
 	// Set uniforms
 	data.Program.SetInt("TIMESTAMP", int32(TIMESTAMP))

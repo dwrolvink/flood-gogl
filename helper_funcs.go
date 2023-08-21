@@ -76,7 +76,7 @@ type img_dims struct {
 }
 
 func get_image_dimensions(image_path string) img_dims {
-	reader, err := os.Open(StartImageSrc)
+	reader, err := os.Open(image_path)
 	if err != nil {
 		panic(err)
 	}
