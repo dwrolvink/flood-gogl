@@ -12,6 +12,13 @@ type Number interface {
 	constraints.Integer | constraints.Float
 }
 
+func abs[T Number](a T) T {
+	if a < 0.0 {
+		return -a
+	}
+	return a
+}
+
 func max[T Number](a, b T) T {
 	if a > b {
 		return a

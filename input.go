@@ -8,13 +8,84 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
+var (
+	CURSOR_XPOS_SCREEN float64
+	CURSOR_YPOS_SCREEN float64
+
+	DRAG_XPOS_ORIGIN float64
+	DRAG_YPOS_ORIGIN float64
+
+	DRAG_X float64 // difference in uv since last drag()
+	DRAG_Y float64 // difference in uv since last drag()
+
+	MOUSE_LB_PRESSED bool
+)
+
+const (
+	MOUSE_LEFT  = 0
+	MOUSE_RIGHT = 1
+
+	MOUSE_BUTTON_DOWN = 1
+	MOUSE_BUTTON_UP   = 0
+
+	MIN_PAN_DISTANCE = 0.002
+)
+
+// reset cursor related state when the cursor exits the window
+func ExitScreen() {
+	fmt.Println("screen exit")
+	MOUSE_LB_PRESSED = false
+}
+
+func SetMouseHandling(window *glfw.Window) {
+	window.SetCursorPosCallback(func(_ *glfw.Window, xpos float64, ypos float64) {
+		CURSOR_XPOS_SCREEN = xpos
+		CURSOR_YPOS_SCREEN = ypos
+
+		if MOUSE_LB_PRESSED == true {
+			update_drag_delta()
+			drag()
+		}
+	})
+
+	window.SetMouseButtonCallback(func(_ *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+		fmt.Println("button, action, mods", button, action, mods)
+
+		if button == MOUSE_LEFT {
+			if action == MOUSE_BUTTON_DOWN {
+				MOUSE_LB_PRESSED = true
+				reset_drag_origin()
+			}
+			if action == MOUSE_BUTTON_UP {
+				MOUSE_LB_PRESSED = false
+			}
+		}
+	})
+
+	window.SetScrollCallback(func(_ *glfw.Window, xoffset float64, yoffset float64) {
+		if yoffset == -1.0 {
+			zoom(ZOOM_OUT, ZOOM_STEP_SIZE*4.0*ZOOM)
+		}
+		if yoffset == 1.0 {
+			zoom(ZOOM_IN, ZOOM_STEP_SIZE*4.0*ZOOM)
+		}
+	})
+
+	window.SetCursorEnterCallback(func(_ *glfw.Window, entered bool) {
+		if entered == false {
+			ExitScreen()
+		} else {
+			fmt.Println("screen enter")
+		}
+	})
+}
+
 func SetKeyHandling(window *glfw.Window) {
 	window.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// Alias for readability
 		Down := glfw.Press
 		Up := glfw.Release
 		Repeat := glfw.Repeat
-		_ = Up
 
 		// Get key as defined by the locale (qwerty, dvorak, etc)
 		char := glfw.GetKeyName(key, scancode)
@@ -53,8 +124,6 @@ func SetKeyHandling(window *glfw.Window) {
 
 		// Handle keystrokes
 		translate_step_size := 0.02
-		translate_mult := 1.0
-		zoom_step_size := 0.02
 
 		switch char {
 		case "65": // space
@@ -65,46 +134,41 @@ func SetKeyHandling(window *glfw.Window) {
 		// -----------------------------------------------
 		case "110": // home
 			if action == Down || action == Repeat {
-				ZOOM = max(ZOOM-zoom_step_size, 0.0)
-				if action == Repeat {
-					ZOOM -= zoom_step_size // speed up
-				}
+				zoom(ZOOM_IN, ZOOM_STEP_SIZE)
 			}
 		case "115": // end
 			if action == Down || action == Repeat {
-				ZOOM = min(ZOOM+zoom_step_size, 2.0)
-				if action == Repeat {
-					ZOOM += zoom_step_size // speed up
-				}
+				zoom(ZOOM_OUT, ZOOM_STEP_SIZE)
 			}
 		// PAN
 		// -----------------------------------------------
 		case "116": // arrow down
 			if action == Down || action == Repeat {
-				Y_TRANSLATE -= max(0.002, ZOOM*translate_step_size)
+				// Y_TRANSLATE -= max(0.002, ZOOM*translate_step_size)
+				pan(0.0, -translate_step_size)
 				if action == Repeat {
-					Y_TRANSLATE -= max(0.002, ZOOM*translate_mult*translate_step_size) // speed up
+					pan(0.0, -translate_step_size)
 				}
 			}
 		case "111": // arrow up
 			if action == Down || action == Repeat {
-				Y_TRANSLATE += max(0.002, ZOOM*translate_step_size)
+				pan(0.0, translate_step_size)
 				if action == Repeat {
-					Y_TRANSLATE += max(0.002, ZOOM*translate_mult*translate_step_size)
+					pan(0.0, translate_step_size)
 				}
 			}
 		case "113": // arrow left
 			if action == Down || action == Repeat {
-				X_TRANSLATE -= max(0.002, ZOOM*translate_step_size)
+				pan(-translate_step_size, 0.0)
 				if action == Repeat {
-					X_TRANSLATE -= max(0.002, ZOOM*translate_mult*translate_step_size)
+					pan(-translate_step_size, 0.0)
 				}
 			}
 		case "114": // arrow right
 			if action == Down || action == Repeat {
-				X_TRANSLATE += max(0.002, ZOOM*translate_step_size)
+				pan(translate_step_size, 0.0)
 				if action == Repeat {
-					X_TRANSLATE += max(0.002, ZOOM*translate_mult*translate_step_size)
+					pan(translate_step_size, 0.0)
 				}
 			}
 		// TOGGLES

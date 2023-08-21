@@ -96,7 +96,7 @@ vec2 pick_target (int self, vec2 coords) {
 vec2 pick_target_mod (int self, vec2 coords) {
     int s = self;
     vec4 value = get_color_by_coord(PfGameTexture, coords);
-    int m = modulo(TIMESTAMP, 4);
+    int m = modulo(TIMESTAMP + int(coords.x) + int(coords.y), 4);
 
     // pick no target if no red in cell
     if (value[s] < 0.5) {
@@ -183,7 +183,7 @@ vec3 pick_target2 (int self, int enemy, vec2 coords) {
         return package(coords, 0.0);
     }
 
-    MOD4 = modulo(TIMESTAMP, 4);
+    MOD4 = modulo(TIMESTAMP + int(coords.x) + int(coords.y), 4);
 
 
     // -- get values in random order

@@ -91,6 +91,7 @@ func main() {
 
 	// Get user input from commandline & say what each keypress should do
 	SetKeyHandling(window)
+	SetMouseHandling(window)
 	ParseCommandlineArgs()
 
 	// Create textures for the different frame buffers
