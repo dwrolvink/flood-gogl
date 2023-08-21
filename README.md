@@ -4,6 +4,8 @@ Rewrite of https://github.com/dwrolvink/flood using OpenGL (go-gl & glfw).
 
 This project uses the [go-gl wrapper package](https://github.com/dwrolvink/gogl/tree/main) that I'm writing as an exercise, based on this lecture series: https://www.youtube.com/watch?v=EJz71vpNhSU&list=PLDZujg-VgQlZUy1iCqBbe5faZLMkA3g2x&index=42 
 
+https://github.com/dwrolvink/flood-gogl/assets/30291690/47318633-f58a-4ba4-81b2-dd930a943b4b
+
 
 
 Some features:
