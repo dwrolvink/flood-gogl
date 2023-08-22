@@ -14,7 +14,7 @@ float max5 (float v0, float v1, float v2, float v3, float v4) {
 }
 
 vec4 blur(sampler2D image, vec2 uv, vec2 resolution) {
-    float effect = 0.985;
+    float effect = 0.99;
     float circular = 0.99;
 
     vec4 color = vec4(0.0, 0.0, 0.0, 1.0);

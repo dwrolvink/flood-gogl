@@ -7,22 +7,11 @@ This project uses the [go-gl wrapper package](https://github.com/dwrolvink/gogl/
 https://github.com/dwrolvink/flood-gogl/assets/30291690/47318633-f58a-4ba4-81b2-dd930a943b4b
 
 
-
-Some features:
---------------------
-- All that is needed to draw on the screen is contained in `DataObjects`, and the code allows to switch between DataObjects on the fly, and within a draw cycle.
-- One DataObject uses plain triangle vertices, the other uses quads.
-- One DataObject is really simple by design (one Triangle that is drawn 4 times).
-- One DataObject implements a naive system for drawing Sprites, and animating them.
-- Frame speed is somewhat configurable.
-- It can record a gif of what happens on the screen (not very performant).
-
 Support 
 --------------------
-I have built this package on linux with go 1.16, it's not guaranteed to work on any other system, but it probably will. Let me know if you have troubles.
+I have built this package on linux with go 1.16, it's not guaranteed to work on any other system, but it probably will.
 - Recording will not work on non linux systems as of yet!
 - Recording requires ffmpeg to be installed.
-
 
 
 Good to know
@@ -81,21 +70,6 @@ go build -v
 
 Args
 ====================
-
---record
--------------------
-Record gif to `record/output/`. Default length is 1 second (50 ticks @ 20ms per tick).
-
-> Recording requires ffmpeg to be installed.
-
-```bash
-go run ./*.go --record
-```
-
-Record gif to `record/output/`. Change length to 2 seconds.
-```bash
-go run ./*.go --record 2
-```
 
 --fps
 -------------------
