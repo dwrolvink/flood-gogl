@@ -20,8 +20,22 @@ uniform float X_TRANSLATE;
 
 uniform int SHOW_HUD;
 
+vec2 Resolution = vec2(window_width, window_height);
+
 int modulo(int a, int b) {
     return a - (b * int(a/b));
+}
+
+vec2 uv_to_coords(vec2 uv, vec2 resolution) {
+    vec2 coords = (uv * resolution);
+    coords.x = floor(coords.x);
+    coords.y = floor(coords.y);
+    
+    return coords;
+}
+
+vec2 coords_to_uv(vec2 coords, vec2 resolution) {
+    return (coords + .5) / resolution;
 }
 
 void main() {
@@ -90,7 +104,11 @@ void main() {
         }
 
         // helptext
-        FragColor += texture(PfAdditionalTexture, TexCoord + vec2(0.42, 0.78));
+        vec2 px = uv_to_coords(TexCoord, Resolution);
+        px.x += 330.0;
+        px.y -= 120.0;
+        vec2 uv = coords_to_uv(px, Resolution);
+        FragColor += texture(PfAdditionalTexture, uv);
         return;
     }
 

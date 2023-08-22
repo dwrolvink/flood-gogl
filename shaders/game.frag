@@ -77,7 +77,7 @@ vec3 pick_target_1 (int self, int enemy, vec2 coords) {
         return package(coords, 0.0);
     }
 
-    MOD4 = modulo(TIMESTAMP + int(coords.x) + int(coords.y), 4);
+    MOD4 = modulo(TIMESTAMP + (2*int(coords.x)) + int(coords.y), 4);
 
 
     // -- get values in random order
@@ -142,6 +142,20 @@ vec3 pick_target_1 (int self, int enemy, vec2 coords) {
     // }
 
 
+    // -- get empty cell
+    if (values[0][s] <= 0.01 && values[0][e] == 0.0) {
+        return package(icoords[0], send);
+    }
+    if (values[1][s] <= 0.01 && values[1][e] == 0.0) {
+        return package(icoords[1], send);
+    }
+    if (values[2][s] <= 0.01 && values[2][e] == 0.0) {
+        return package(icoords[2], send);
+    }
+    if (values[3][s] <= 0.01 && values[3][e] == 0.0) {
+        return package(icoords[3], send);
+    }
+
     // -- get cell with strongest enemy cell value
     target_coords = coords;
     max_value = 0.0;
@@ -166,21 +180,6 @@ vec3 pick_target_1 (int self, int enemy, vec2 coords) {
     if (max_value > 0.0) {
         return package(target_coords, send);
     }
-
-    // -- get empty cell
-    if (values[0][s] <= 0.01 && values[0][e] == 0.0) {
-        return package(icoords[0], send);
-    }
-    if (values[1][s] <= 0.01 && values[1][e] == 0.0) {
-        return package(icoords[1], send);
-    }
-    if (values[2][s] <= 0.01 && values[2][e] == 0.0) {
-        return package(icoords[2], send);
-    }
-    if (values[3][s] <= 0.01 && values[3][e] == 0.0) {
-        return package(icoords[3], send);
-    }
-
 
     // -- get cell with strongest enemy cell smell
     target_coords = coords;
@@ -582,7 +581,7 @@ void main() {
     if (GameColor.r > 0.01 && GameColor.g > 0.01){
         GameColor.b = 10.0*abs(GameColor.g - GameColor.r);
     }
-    GameColor.b -= 0.0002;
+    GameColor.b -= 0.002;
 
 
     float buff_r = GameColor.r;

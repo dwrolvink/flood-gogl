@@ -25,9 +25,9 @@ func NewDefaultTexture() gogl.TextureID {
 }
 
 // Load given image into the given texture. Used to reset the game state.
-func ResetFrame(textureID gogl.TextureID, imgSource string) {
+func ResetFrame(textureID gogl.TextureID, imgSource string, pad_w, pad_h int) {
 	// load image data from source image
-	pixels, _ := gogl.LoadPixelDataFromImage(imgSource)
+	pixels, _ := gogl.LoadPixelDataFromImage(imgSource, pad_w, pad_h)
 
 	// Put the pixels in the texture
 	gogl.BindTexture(textureID)

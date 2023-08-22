@@ -106,24 +106,24 @@ func main() {
 	PfSmellGreenTextureID = NewDefaultTexture()
 
 	// used for writing current game state during UpdateGame
-	ResetFrame(PfGameTextureWriteID, StartImageSrc) // texture needs to be initialized before linking to FBO
+	ResetFrame(PfGameTextureWriteID, StartImageSrc, 0, 0) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGameWrite, PfGameTextureWriteID)
 
 	// Create frame buffer for the game state
 	// Used for displaying game state to the screen
-	ResetFrame(PfGameTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
+	ResetFrame(PfGameTextureID, StartImageSrc, 0, 0) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBGame, PfGameTextureID)
 
 	// Additional texture for HUD and other purposes
-	ResetFrame(PfAdditionalTextureID, AdditionalTexture) // texture needs to be initialized before linking to FBO
+	ResetFrame(PfAdditionalTextureID, AdditionalTexture, Width-500, Height-500) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBAdditionalTexture, PfAdditionalTextureID)
 
 	// Create frame buffer for the red "smell" (used for green cells to know where the red cells are)
-	ResetFrame(PfSmellRedTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
+	ResetFrame(PfSmellRedTextureID, StartImageSrc, 0, 0) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellRed, PfSmellRedTextureID)
 
 	// Create frame buffer for the green "smell" (used for red cells to know where the green cells are)
-	ResetFrame(PfSmellGreenTextureID, StartImageSrc) // texture needs to be initialized before linking to FBO
+	ResetFrame(PfSmellGreenTextureID, StartImageSrc, 0, 0) // texture needs to be initialized before linking to FBO
 	CreateFramebuffer(&FBSmellGreen, PfSmellGreenTextureID)
 
 	// Main loop
@@ -136,10 +136,10 @@ func main() {
 		// Reset the textures that are bound to the frame buffers when we want to restart
 		if ActionReset {
 			ActionReset = false
-			ResetFrame(PfGameTextureWriteID, StartImageSrc)
-			ResetFrame(PfGameTextureID, StartImageSrc)
-			ResetFrame(PfSmellRedTextureID, StartImageSrc)
-			ResetFrame(PfSmellGreenTextureID, StartImageSrc)
+			ResetFrame(PfGameTextureWriteID, StartImageSrc, 0, 0)
+			ResetFrame(PfGameTextureID, StartImageSrc, 0, 0)
+			ResetFrame(PfSmellRedTextureID, StartImageSrc, 0, 0)
+			ResetFrame(PfSmellGreenTextureID, StartImageSrc, 0, 0)
 		}
 
 		// key actions
